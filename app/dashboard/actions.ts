@@ -1,41 +1,21 @@
 "use server";
 
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { currentUser } from "@clerk/nextjs/server";
 
 import { supabase } from "@/lib/supabase";
 
-export type ModerationSettingsInput = {
-  blockPhoneNumbers?: boolean;
-  blockLinks?: boolean;
-  blockKeywords?: boolean;
-  spamProtectionEnabled?: boolean;
-  blockedKeywords?: string[];
-};
+import type {
+  ModerationSettings,
+  ModerationSettingsInput,
+  ModerationSettingsRow,
+} from "@/types/supabase";
 
 type UserProfileInput = {
   name?: string;
   email?: string;
 };
 
-type ModerationSettingsState = {
-  userId: string;
-  blockPhoneNumbers: boolean;
-  blockLinks: boolean;
-  blockKeywords: boolean;
-  spamProtectionEnabled: boolean;
-  blockedKeywords: string[];
-};
-
-type ModerationSettingsRow = {
-  user_id: string;
-  block_phone_numbers: boolean;
-  block_links: boolean;
-  block_keywords: boolean;
-  spam_protection_enabled: boolean;
-  blocked_keywords: string[];
-};
-
-const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettingsState => ({
+const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettings => ({
   userId: row.user_id,
   blockPhoneNumbers: row.block_phone_numbers,
   blockLinks: row.block_links,
@@ -45,8 +25,7 @@ const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettingsState => 
 });
 
 export async function getModerationSettings() {
-  const { isAuthenticated } = await auth()
-  const user = await currentUser()
+  const user = await currentUser();
 
   if (!user) {
     throw new Error("Not authenticated");
@@ -71,8 +50,7 @@ export async function updateModerationSettings(
   input: ModerationSettingsInput,
   userProfile?: UserProfileInput,
 ) {
-  const { isAuthenticated } = await auth()
-  const user = await currentUser()
+  const user = await currentUser();
 
   if (!user) {
     throw new Error("Not authenticated");
@@ -88,7 +66,7 @@ export async function updateModerationSettings(
 
   const current = currentData ? mapSettingsRow(currentData) : null;
 
-  const next: ModerationSettingsState = {
+  const next: ModerationSettings = {
     userId: user.id,
     blockPhoneNumbers:
       input.blockPhoneNumbers ?? current?.blockPhoneNumbers ?? false,

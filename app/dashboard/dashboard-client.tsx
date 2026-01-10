@@ -18,8 +18,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   getModerationSettings,
   updateModerationSettings,
-  type ModerationSettingsInput,
 } from "./actions";
+import type { ModerationSettingsInput } from "@/types/supabase";
 
 type DashboardClientProps = {
   userName: string;
