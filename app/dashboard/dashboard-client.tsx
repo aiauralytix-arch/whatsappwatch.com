@@ -50,6 +50,7 @@ export default function DashboardClient({
   const [groups, setGroups] = React.useState<ModerationGroup[]>([]);
   const [activeGroupId, setActiveGroupId] = React.useState<string | null>(null);
   const [newGroupLink, setNewGroupLink] = React.useState("");
+  const [newGroupName, setNewGroupName] = React.useState("");
   const canEdit = hasLoaded && Boolean(activeGroupId);
 
   React.useEffect(() => {
@@ -147,12 +148,13 @@ export default function DashboardClient({
     const trimmed = newGroupLink.trim();
     if (!trimmed) return;
     setIsSyncing(true);
-    void createModerationGroup(trimmed)
+    void createModerationGroup(trimmed, newGroupName)
       .then((group) => getModerationSettings(group.id))
       .then((data) => {
         setGroups(data.groups);
         setActiveGroupId(data.activeGroupId);
         setNewGroupLink("");
+        setNewGroupName("");
         if (data.settings) {
           setToggles({
             phoneNumbers: data.settings.blockPhoneNumbers,
@@ -318,13 +320,23 @@ export default function DashboardClient({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-3">
+                <Input
+                  placeholder="Group name (optional)"
+                  value={newGroupName}
+                  onChange={(event) => setNewGroupName(event.target.value)}
+                  maxLength={80}
+                  disabled={!hasLoaded || isSyncing}
+                />
                 <Input
                   placeholder="https://chat.whatsapp.com/your-invite-link"
                   value={newGroupLink}
                   onChange={(event) => setNewGroupLink(event.target.value)}
+                  maxLength={512}
                   disabled={!hasLoaded || isSyncing}
                 />
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   variant="outline"
                   className="whitespace-nowrap"
@@ -357,10 +369,10 @@ export default function DashboardClient({
                       }
                       onClick={() => handleSelectGroup(group.id)}
                       disabled={isSyncing}
-                      title={group.groupLink ?? "Untitled group"}
+                      title={group.groupName ?? group.groupLink ?? "Untitled group"}
                       className="max-w-[260px] truncate"
                     >
-                      {group.groupLink ?? "Untitled group"}
+                      {group.groupName ?? group.groupLink ?? "Untitled group"}
                     </Button>
                   ))
                 )}

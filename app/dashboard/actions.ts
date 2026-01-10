@@ -14,7 +14,8 @@ import type {
 } from "@/types/supabase";
 
 const maxGroups = 50;
-const groupSelect = "id, user_id, group_link, created_at, updated_at";
+const groupSelect =
+  "id, user_id, group_link, group_name, created_at, updated_at";
 const settingsSelect =
   "id, user_id, group_id, block_phone_numbers, block_links, block_keywords, spam_protection_enabled, blocked_keywords";
 
@@ -22,6 +23,7 @@ const mapGroupRow = (row: ModerationGroupRow): ModerationGroup => ({
   id: row.id,
   userId: row.user_id,
   groupLink: row.group_link,
+  groupName: row.group_name,
 });
 
 const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettings => ({
@@ -39,6 +41,16 @@ const normalizeGroupLink = (groupLink: string) => {
   if (trimmed.length === 0) return null;
   if (trimmed.length > 512) {
     throw new Error("Group link is too long.");
+  }
+  return trimmed;
+};
+
+const normalizeGroupName = (groupName?: string) => {
+  if (groupName === undefined) return undefined;
+  const trimmed = groupName.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 80) {
+    throw new Error("Group name is too long.");
   }
   return trimmed;
 };
@@ -142,6 +154,7 @@ export async function getModerationSettings(
 
 export async function createModerationGroup(
   groupLink: string,
+  groupName?: string,
 ): Promise<ModerationGroup> {
   const user = await currentUser();
 
@@ -150,6 +163,7 @@ export async function createModerationGroup(
   }
 
   const normalizedGroupLink = normalizeGroupLink(groupLink);
+  const normalizedGroupName = normalizeGroupName(groupName);
 
   if (!normalizedGroupLink) {
     throw new Error("Group link is required.");
@@ -169,6 +183,25 @@ export async function createModerationGroup(
   }
 
   if (existing) {
+    if (
+      normalizedGroupName !== undefined &&
+      normalizedGroupName !== existing.group_name
+    ) {
+      const { data: updated, error: updateError } = await supabase
+        .from("moderation_groups")
+        .update({ group_name: normalizedGroupName })
+        .eq("id", existing.id)
+        .eq("user_id", user.id)
+        .select(groupSelect)
+        .single();
+
+      if (updateError || !updated) {
+        throw new Error("Failed to update group name.");
+      }
+
+      return mapGroupRow(updated);
+    }
+
     return mapGroupRow(existing);
   }
 
@@ -190,6 +223,7 @@ export async function createModerationGroup(
     .insert({
       user_id: user.id,
       group_link: normalizedGroupLink,
+      group_name: normalizedGroupName ?? null,
     })
     .select(groupSelect)
     .single();
