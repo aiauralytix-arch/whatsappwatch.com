@@ -1,23 +1,9 @@
 "use client"
 
-import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
-
-const space = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-space",
-  weight: ["400", "500", "600", "700"],
-});
-
-const plex = IBM_Plex_Sans({
-  subsets: ["latin"],
-  variable: "--font-plex",
-  weight: ["300", "400", "500", "600", "700"],
-});
-
 export default function Home() {
   return (
     <div
-      className={`${space.variable} ${plex.variable} min-h-screen bg-[#f6f3ee] text-[#161616]`}
+      className={`bg-[#f6f3ee] text-[#161616] min-h-screen`}
     >
       <style jsx global>{`
         :root {

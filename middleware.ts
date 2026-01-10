@@ -1,6 +1,12 @@
-import { authMiddleware } from "@/lib/auth/server";
+import { authMiddleware, createRouteMatcher } from "@/lib/auth/server";
 
-export default authMiddleware();
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
+
+export default authMiddleware((auth, req) => {
+  if (isProtectedRoute(req)) {
+    auth().protect();
+  }
+});
 
 export const config = {
   matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
