@@ -49,7 +49,7 @@ export default function Home() {
         <section className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-20 pt-12 sm:px-10 lg:px-16">
           <nav className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-[#3a3a3a]">
             <div className="font-[var(--font-space)] text-base font-semibold tracking-[0.35em]">
-              AXIOM FORM
+              WHATSAPP WATCH
             </div>
             <div className="hidden items-center gap-8 font-[var(--font-plex)] text-xs sm:flex">
               <span>Process</span>
@@ -79,43 +79,43 @@ export default function Home() {
           <div className="mt-24 grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-10">
               <p className="font-[var(--font-plex)] text-xs uppercase tracking-[0.35em] text-[#6b6b6b]">
-                Modular intelligence for ambitious teams
+                Quiet automation for WhatsApp communities
               </p>
               <h1 className="font-[var(--font-space)] text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-                Build a calmer, faster operating system for your modern
-                business.
+                Keep your groups clean, calm, and spam free
+                automatically.
               </h1>
               <p className="max-w-xl font-[var(--font-plex)] text-lg leading-8 text-[#474747]">
-                Axiom Form designs operational workflows that feel effortless:
-                streamlined tools, crisp data narratives, and systems that keep
-                your teams in motion with zero noise.
+                WhatsApp Watch creates calm moderation systems that work quietly,
+                removing spam and distractions while keeping conversations
+                clear, focused, and uninterrupted.
               </p>
               <div className="flex flex-wrap items-center gap-4">
                 <button className="rounded-full bg-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]">
-                  Start the Build
+                  Start Protecting My Group
                 </button>
                 <button className="rounded-full border border-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] transition hover:bg-[#161616] hover:text-[#f6f3ee]">
-                  See the Blueprint
+                  See How It Works
                 </button>
               </div>
               <div className="grid max-w-xl grid-cols-3 gap-4 border-t border-[#cfc7bc] pt-6 text-center font-[var(--font-plex)] text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">
                 <div>
                   <div className="font-[var(--font-space)] text-2xl text-[#161616]">
-                    48h
+                    Instant
                   </div>
-                  Audit turnaround
+                  Setup
                 </div>
                 <div>
                   <div className="font-[var(--font-space)] text-2xl text-[#161616]">
-                    3x
+                    Auto
                   </div>
-                  Decision clarity
+                  Delete Spam
                 </div>
                 <div>
                   <div className="font-[var(--font-space)] text-2xl text-[#161616]">
-                    12
+                    Zero
                   </div>
-                  Modular lanes
+                  Manual Moderation
                 </div>
               </div>
             </div>
@@ -128,15 +128,15 @@ export default function Home() {
                   The Quiet Stack
                 </h2>
                 <p className="font-[var(--font-plex)] text-sm leading-6 text-[#4b4b4b]">
-                  A single page of operational signals: what is working, what is
-                  drifting, and what to build next.
+                  A single dashboard showing what was scanned, what was removed,
+                  and how your group stays protected — without constant oversight.
                 </p>
               </div>
               <div className="space-y-4 text-sm text-[#3c3c3c]">
                 {[
-                  "Signal design: metrics that read like a story",
-                  "Workflow lattice: every action has a place",
-                  "Momentum studio: rituals that keep teams aligned",
+                  "Automatic message scanning in real time",
+                  "Smart deletion of spam, links, and numbers",
+                  "Simple rules you control, once",
                 ].map((item) => (
                   <div
                     key={item}
@@ -155,15 +155,15 @@ export default function Home() {
           <div className="grid gap-10 rounded-[40px] border border-[#cfc7bc] bg-[#fefcf9] px-8 py-12 shadow-[var(--shadow-soft)] lg:grid-cols-[0.7fr_1.3fr]">
             <div className="space-y-6">
               <p className="font-[var(--font-plex)] text-xs uppercase tracking-[0.35em] text-[#6b6b6b]">
-                Method
+                How it works
               </p>
               <h2 className="font-[var(--font-space)] text-3xl font-semibold">
-                A modernist approach to operational calm.
+                Three steps. One calm system.
               </h2>
               <p className="font-[var(--font-plex)] text-base leading-7 text-[#4b4b4b]">
-                We reduce complexity into functional modules that translate
-                strategy into daily movement. Every workflow is designed to feel
-                inevitable.
+                WhatsApp Watch is designed to be set up once and trusted daily.
+                No dashboards to babysit. No constant tuning. Just clear rules
+                and quiet automation.
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
@@ -213,14 +213,14 @@ export default function Home() {
                 The Journey
               </p>
               <h2 className="mt-4 font-[var(--font-space)] text-3xl font-semibold">
-                From noise to narrative in four deliberate phases.
+                From chaos to clean conversation.
               </h2>
               <div className="mt-8 space-y-6 font-[var(--font-plex)] text-sm text-[#c9c0b5]">
                 {[
-                  "Discovery atelier — decode the operating reality.",
-                  "Alignment studio — define a shared language.",
-                  "System prototyping — build the flow architecture.",
-                  "Momentum launch — deploy rituals and signals.",
+                  "Group messages are scanned automatically",
+                  "Spam and promotions are removed instantly",
+                  "Real conversations stay uninterrupted",
+                  "You stay focused on your community",
                 ].map((step) => (
                   <div
                     key={step}
@@ -237,12 +237,11 @@ export default function Home() {
                 Proof
               </p>
               <h3 className="mt-4 font-[var(--font-space)] text-2xl font-semibold">
-                “Axiom Form made our strategy feel effortless.”
+                ““We stopped worrying about spam completely.””
               </h3>
               <p className="mt-6 font-[var(--font-plex)] text-sm leading-7 text-[#4b4b4b]">
-                We replaced chaotic reporting with a disciplined system. Our
-                teams now move in sync, and our leadership finally sees the
-                business as a single clear narrative.
+                Our WhatsApp group finally feels usable again. No promo links,
+                no random numbers, no constant admin cleanup. It just works.
               </p>
               <div className="mt-8 flex items-center justify-between border-t border-[#e2dad0] pt-6 text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">
                 <span>Operations Director</span>
@@ -311,19 +310,19 @@ export default function Home() {
                   Final Call
                 </p>
                 <h2 className="font-[var(--font-space)] text-3xl font-semibold">
-                  Build your single-page operating narrative today.
+                  Protect your WhatsApp group in minutes.
                 </h2>
                 <p className="font-[var(--font-plex)] text-base leading-7 text-[#c9c0b5]">
-                  One scroll, one system, no excess. A modernist framework that
-                  gives your team a calm, decisive rhythm.
+                  No complex setup. No constant moderation.
+                  Just a calmer WhatsApp experience for everyone.
                 </p>
               </div>
               <div className="flex flex-col items-start justify-center gap-4">
                 <button className="w-full rounded-full bg-[#f7b787] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#161616] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]">
-                  Begin Alignment
+                  Start Free
                 </button>
                 <button className="w-full rounded-full border border-[#f6f3ee] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:bg-[#f6f3ee] hover:text-[#161616]">
-                  Request a Call
+                  View Dashboard Demo
                 </button>
               </div>
             </div>
