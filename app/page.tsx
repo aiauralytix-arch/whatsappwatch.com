@@ -52,10 +52,18 @@ export default function Home() {
               WHATSAPP WATCH
             </div>
             <div className="hidden items-center gap-8 font-[var(--font-plex)] text-xs sm:flex">
-              <span>Process</span>
-              <span>System</span>
-              <span>Stories</span>
-              <span>Contact</span>
+              <a className="transition hover:text-[#161616]" href="/process">
+                Process
+              </a>
+              <a className="transition hover:text-[#161616]" href="/system">
+                System
+              </a>
+              <a className="transition hover:text-[#161616]" href="/stories">
+                Stories
+              </a>
+              <a className="transition hover:text-[#161616]" href="/contact">
+                Contact
+              </a>
             </div>
             <div className="flex items-center gap-3">
               <a
@@ -70,9 +78,12 @@ export default function Home() {
               >
                 Sign up
               </a>
-              <button className="rounded-full border border-[#161616] px-4 py-2 font-[var(--font-plex)] text-xs tracking-[0.2em] transition hover:bg-[#161616] hover:text-[#f6f3ee]">
+              <a
+                href="/contact"
+                className="rounded-full border border-[#161616] px-4 py-2 font-[var(--font-plex)] text-xs tracking-[0.2em] transition hover:bg-[#161616] hover:text-[#f6f3ee]"
+              >
                 Book Signal
-              </button>
+              </a>
             </div>
           </nav>
 
@@ -91,12 +102,18 @@ export default function Home() {
                 clear, focused, and uninterrupted.
               </p>
               <div className="flex flex-wrap items-center gap-4">
-                <button className="rounded-full bg-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]">
+                <a
+                  href="/sign-up"
+                  className="rounded-full bg-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]"
+                >
                   Start Protecting My Group
-                </button>
-                <button className="rounded-full border border-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] transition hover:bg-[#161616] hover:text-[#f6f3ee]">
+                </a>
+                <a
+                  href="/process"
+                  className="rounded-full border border-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] transition hover:bg-[#161616] hover:text-[#f6f3ee]"
+                >
                   See How It Works
-                </button>
+                </a>
               </div>
               <div className="grid max-w-xl grid-cols-3 gap-4 border-t border-[#cfc7bc] pt-6 text-center font-[var(--font-plex)] text-xs uppercase tracking-[0.2em] text-[#6b6b6b]">
                 <div>
@@ -264,9 +281,12 @@ export default function Home() {
                 Choose the engagement that matches your pace. Every plan
                 delivers a single cohesive operating canvas.
               </p>
-              <button className="rounded-full bg-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]">
+              <a
+                href="/contact"
+                className="inline-flex w-fit rounded-full bg-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]"
+              >
                 Reserve a Slot
-              </button>
+              </a>
             </div>
             <div className="grid gap-4">
               {[
@@ -318,12 +338,18 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col items-start justify-center gap-4">
-                <button className="w-full rounded-full bg-[#f7b787] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#161616] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]">
+                <a
+                  href="/sign-up"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-[#f7b787] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#161616] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]"
+                >
                   Start Free
-                </button>
-                <button className="w-full rounded-full border border-[#f6f3ee] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:bg-[#f6f3ee] hover:text-[#161616]">
+                </a>
+                <a
+                  href="/dashboard"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-[#f6f3ee] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:bg-[#f6f3ee] hover:text-[#161616]"
+                >
                   View Dashboard Demo
-                </button>
+                </a>
               </div>
             </div>
           </div>
