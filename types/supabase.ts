@@ -7,8 +7,24 @@ export type UserRow = {
   updated_at: string;
 };
 
-export type ModerationSettingsRow = {
+export type ModerationGroupRow = {
+  id: string;
   user_id: string;
+  group_link: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ModerationGroup = {
+  id: string;
+  userId: string;
+  groupLink: string | null;
+};
+
+export type ModerationSettingsRow = {
+  id: string;
+  user_id: string;
+  group_id: string;
   block_phone_numbers: boolean;
   block_links: boolean;
   block_keywords: boolean;
@@ -18,6 +34,7 @@ export type ModerationSettingsRow = {
 
 export type ModerationSettings = {
   userId: string;
+  groupId: string;
   blockPhoneNumbers: boolean;
   blockLinks: boolean;
   blockKeywords: boolean;
@@ -31,4 +48,10 @@ export type ModerationSettingsInput = {
   blockKeywords?: boolean;
   spamProtectionEnabled?: boolean;
   blockedKeywords?: string[];
+};
+
+export type ModerationContext = {
+  groups: ModerationGroup[];
+  activeGroupId: string | null;
+  settings: ModerationSettings | null;
 };

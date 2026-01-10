@@ -16,10 +16,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
+  createModerationGroup,
   getModerationSettings,
   updateModerationSettings,
 } from "./actions";
-import type { ModerationSettingsInput } from "@/types/supabase";
+import type {
+  ModerationGroup,
+  ModerationSettingsInput,
+} from "@/types/supabase";
 
 type DashboardClientProps = {
   userName: string;
@@ -43,6 +47,10 @@ export default function DashboardClient({
   const [keywords, setKeywords] = React.useState<string[]>(defaultKeywords);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [hasLoaded, setHasLoaded] = React.useState(false);
+  const [groups, setGroups] = React.useState<ModerationGroup[]>([]);
+  const [activeGroupId, setActiveGroupId] = React.useState<string | null>(null);
+  const [newGroupLink, setNewGroupLink] = React.useState("");
+  const canEdit = hasLoaded && Boolean(activeGroupId);
 
   React.useEffect(() => {
     let isActive = true;
@@ -52,23 +60,32 @@ export default function DashboardClient({
       try {
         const data = await getModerationSettings();
 
-        if (isActive && data) {
-          setToggles({
-            phoneNumbers: data.blockPhoneNumbers,
-            links: data.blockLinks,
-            keywords: data.blockKeywords,
-            spamProtection: data.spamProtectionEnabled,
-          });
-          setKeywords(
-            data.blockedKeywords.length > 0
-              ? data.blockedKeywords
-              : defaultKeywords,
-          );
+        if (isActive) {
+          setGroups(data.groups);
+          setActiveGroupId(data.activeGroupId);
+          if (data.settings) {
+            setToggles({
+              phoneNumbers: data.settings.blockPhoneNumbers,
+              links: data.settings.blockLinks,
+              keywords: data.settings.blockKeywords,
+              spamProtection: data.settings.spamProtectionEnabled,
+            });
+            setKeywords(
+              data.settings.blockedKeywords.length > 0
+                ? data.settings.blockedKeywords
+                : defaultKeywords,
+            );
+          } else {
+            setToggles(defaultToggles);
+            setKeywords(defaultKeywords);
+          }
         }
       } catch {
         if (isActive) {
           setToggles(defaultToggles);
           setKeywords(defaultKeywords);
+          setGroups([]);
+          setActiveGroupId(null);
         }
       } finally {
         if (isActive) {
@@ -87,21 +104,19 @@ export default function DashboardClient({
 
   const persistSettings = React.useCallback(
     async (input: ModerationSettingsInput) => {
+      if (!activeGroupId) return;
       setIsSyncing(true);
       try {
-        await updateModerationSettings(input, {
-          name: userName,
-          email: userEmail,
-        });
+        await updateModerationSettings(input, { groupId: activeGroupId });
       } finally {
         setIsSyncing(false);
       }
     },
-    [userName, userEmail],
+    [activeGroupId],
   );
 
   const handleToggle = (key: keyof typeof toggles) => (value: boolean) => {
-    if (!hasLoaded) return;
+    if (!canEdit) return;
     setToggles((prev) => ({ ...prev, [key]: value }));
     const mapKey = {
       phoneNumbers: "blockPhoneNumbers",
@@ -113,7 +128,7 @@ export default function DashboardClient({
   };
 
   const addKeywords = () => {
-    if (!hasLoaded) return;
+    if (!canEdit) return;
     const next = keywordInput
       .split(",")
       .map((entry) => entry.trim())
@@ -125,6 +140,68 @@ export default function DashboardClient({
     setKeywords(updated);
     setKeywordInput("");
     void persistSettings({ blockedKeywords: updated });
+  };
+
+  const handleAddGroup = () => {
+    if (!hasLoaded) return;
+    const trimmed = newGroupLink.trim();
+    if (!trimmed) return;
+    setIsSyncing(true);
+    void createModerationGroup(trimmed)
+      .then((group) => getModerationSettings(group.id))
+      .then((data) => {
+        setGroups(data.groups);
+        setActiveGroupId(data.activeGroupId);
+        setNewGroupLink("");
+        if (data.settings) {
+          setToggles({
+            phoneNumbers: data.settings.blockPhoneNumbers,
+            links: data.settings.blockLinks,
+            keywords: data.settings.blockKeywords,
+            spamProtection: data.settings.spamProtectionEnabled,
+          });
+          setKeywords(
+            data.settings.blockedKeywords.length > 0
+              ? data.settings.blockedKeywords
+              : defaultKeywords,
+          );
+        } else {
+          setToggles(defaultToggles);
+          setKeywords(defaultKeywords);
+        }
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
+  };
+
+  const handleSelectGroup = (groupId: string) => {
+    if (groupId === activeGroupId) return;
+    setIsSyncing(true);
+    void getModerationSettings(groupId)
+      .then((data) => {
+        setGroups(data.groups);
+        setActiveGroupId(data.activeGroupId);
+        if (data.settings) {
+          setToggles({
+            phoneNumbers: data.settings.blockPhoneNumbers,
+            links: data.settings.blockLinks,
+            keywords: data.settings.blockKeywords,
+            spamProtection: data.settings.spamProtectionEnabled,
+          });
+          setKeywords(
+            data.settings.blockedKeywords.length > 0
+              ? data.settings.blockedKeywords
+              : defaultKeywords,
+          );
+        } else {
+          setToggles(defaultToggles);
+          setKeywords(defaultKeywords);
+        }
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   return (
@@ -146,7 +223,7 @@ export default function DashboardClient({
                 WhatsApp Moderation Dashboard
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-[#4b4b4b]">
-                Control how messages are moderated in your WhatsApp group.
+                Control how messages are moderated across your WhatsApp groups.
               </p>
             </div>
             <Card className="w-full max-w-sm bg-[#fefcf9] p-6 sm:w-auto">
@@ -176,15 +253,13 @@ export default function DashboardClient({
                     <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
                       Step 1
                     </span>
-                    <span>Buy a subscription.</span>
+                    <span>Add your WhatsApp group invite link.</span>
                   </div>
                   <div className="flex gap-3">
                     <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
                       Step 2
                     </span>
-                    <span>
-                      Add the provided number to your WhatsApp group.
-                    </span>
+                    <span>Select the group you want to moderate.</span>
                   </div>
                   <div className="flex gap-3">
                     <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
@@ -236,22 +311,60 @@ export default function DashboardClient({
         <section>
           <Card className="bg-[#fefcf9]">
             <CardHeader>
-              <CardTitle>Subscription &amp; Payments</CardTitle>
+              <CardTitle>Groups</CardTitle>
               <CardDescription>
-                Manage your plan and unlock advanced moderation settings.
+                Add up to 50 groups. Select a group to edit its moderation
+                settings.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-[#9a948b]">
-                  Current plan
-                </p>
-                <p className="mt-2 text-2xl font-semibold">Free</p>
-                <p className="mt-2 text-sm text-[#6b6b6b]">
-                  Payments handled securely.
-                </p>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Input
+                  placeholder="https://chat.whatsapp.com/your-invite-link"
+                  value={newGroupLink}
+                  onChange={(event) => setNewGroupLink(event.target.value)}
+                  disabled={!hasLoaded || isSyncing}
+                />
+                <Button
+                  variant="outline"
+                  className="whitespace-nowrap"
+                  onClick={handleAddGroup}
+                  disabled={
+                    !hasLoaded ||
+                    isSyncing ||
+                    groups.length >= 50 ||
+                    newGroupLink.trim().length === 0
+                  }
+                >
+                  Add Group
+                </Button>
               </div>
-              <Button className="w-full lg:w-auto">Upgrade Plan</Button>
+              <p className="text-sm text-[#6b6b6b]">
+                {groups.length}/50 groups added.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {groups.length === 0 ? (
+                  <p className="text-sm text-[#6b6b6b]">
+                    No groups yet. Add a WhatsApp invite link to begin.
+                  </p>
+                ) : (
+                  groups.map((group) => (
+                    <Button
+                      key={group.id}
+                      size="sm"
+                      variant={
+                        group.id === activeGroupId ? "default" : "outline"
+                      }
+                      onClick={() => handleSelectGroup(group.id)}
+                      disabled={isSyncing}
+                      title={group.groupLink ?? "Untitled group"}
+                      className="max-w-[260px] truncate"
+                    >
+                      {group.groupLink ?? "Untitled group"}
+                    </Button>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
         </section>
@@ -296,11 +409,11 @@ export default function DashboardClient({
                     <Label className="text-base">{item.label}</Label>
                     <Switch
                       checked={
-                        hasLoaded
+                        canEdit
                           ? toggles[item.id as keyof typeof toggles]
                           : false
                       }
-                      disabled={!hasLoaded || isSyncing}
+                      disabled={!canEdit || isSyncing}
                       onCheckedChange={handleToggle(
                         item.id as keyof typeof toggles,
                       )}
@@ -328,11 +441,13 @@ export default function DashboardClient({
                   placeholder="Add blocked keywords (comma separated)"
                   value={keywordInput}
                   onChange={(event) => setKeywordInput(event.target.value)}
+                  disabled={!canEdit || isSyncing}
                 />
                 <Button
                   variant="outline"
                   className="whitespace-nowrap"
                   onClick={addKeywords}
+                  disabled={!canEdit || isSyncing}
                 >
                   Add Keywords
                 </Button>
