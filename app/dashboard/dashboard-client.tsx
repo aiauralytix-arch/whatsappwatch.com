@@ -15,29 +15,98 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  getModerationSettings,
+  updateModerationSettings,
+  type ModerationSettingsInput,
+} from "./actions";
 
 type DashboardClientProps = {
   userName: string;
   userEmail: string;
 };
 
-const initialKeywords = ["giveaway", "promo", "loan"];
+const defaultKeywords = ["giveaway", "promo", "loan"];
+const defaultToggles = {
+  phoneNumbers: true,
+  links: true,
+  keywords: true,
+  spamProtection: false,
+};
 
 export default function DashboardClient({
   userName,
   userEmail,
 }: DashboardClientProps) {
-  const [toggles, setToggles] = React.useState({
-    phoneNumbers: true,
-    links: true,
-    keywords: true,
-    spamProtection: false,
-  });
+  const [toggles, setToggles] = React.useState(defaultToggles);
   const [keywordInput, setKeywordInput] = React.useState("");
-  const [keywords, setKeywords] = React.useState<string[]>(initialKeywords);
+  const [keywords, setKeywords] = React.useState<string[]>(defaultKeywords);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+
+  React.useEffect(() => {
+    let isActive = true;
+
+    const loadSettings = async () => {
+      setIsSyncing(true);
+      try {
+        const data = await getModerationSettings();
+
+        if (isActive && data) {
+          setToggles({
+            phoneNumbers: data.blockPhoneNumbers,
+            links: data.blockLinks,
+            keywords: data.blockKeywords,
+            spamProtection: data.spamProtectionEnabled,
+          });
+          setKeywords(
+            data.blockedKeywords.length > 0
+              ? data.blockedKeywords
+              : defaultKeywords,
+          );
+        }
+      } catch {
+        if (isActive) {
+          setToggles(defaultToggles);
+          setKeywords(defaultKeywords);
+        }
+      } finally {
+        if (isActive) {
+          setIsSyncing(false);
+        }
+      }
+    };
+
+    void loadSettings();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const persistSettings = React.useCallback(
+    async (input: ModerationSettingsInput) => {
+      setIsSyncing(true);
+      try {
+        await updateModerationSettings(input, {
+          name: userName,
+          email: userEmail,
+        });
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [userName, userEmail],
+  );
 
   const handleToggle = (key: keyof typeof toggles) => (value: boolean) => {
     setToggles((prev) => ({ ...prev, [key]: value }));
+    const mapKey = {
+      phoneNumbers: "blockPhoneNumbers",
+      links: "blockLinks",
+      keywords: "blockKeywords",
+      spamProtection: "spamProtectionEnabled",
+    } as const;
+    void persistSettings({ [mapKey[key]]: value });
   };
 
   const addKeywords = () => {
@@ -48,8 +117,10 @@ export default function DashboardClient({
 
     if (next.length === 0) return;
 
-    setKeywords((prev) => Array.from(new Set([...prev, ...next])));
+    const updated = Array.from(new Set([...keywords, ...next]));
+    setKeywords(updated);
     setKeywordInput("");
+    void persistSettings({ blockedKeywords: updated });
   };
 
   return (
@@ -303,7 +374,9 @@ export default function DashboardClient({
         </section>
 
         <footer className="text-center text-xs uppercase tracking-[0.2em] text-[#9a948b]">
-          Moderation actions are automated. Review WhatsApp policies.
+          {isSyncing
+            ? "Syncing changes..."
+            : "Moderation actions are automated. Review WhatsApp policies."}
         </footer>
       </main>
     </div>
