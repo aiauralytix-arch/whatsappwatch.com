@@ -15,7 +15,7 @@ import type {
 
 const maxGroups = 50;
 const groupSelect =
-  "id, user_id, group_link, group_name, created_at, updated_at";
+  "id, user_id, group_link, group_name, subscription_price_inr, subscription_status, created_at, updated_at";
 const settingsSelect =
   "id, user_id, group_id, block_phone_numbers, block_links, block_keywords, spam_protection_enabled, blocked_keywords";
 
@@ -24,6 +24,8 @@ const mapGroupRow = (row: ModerationGroupRow): ModerationGroup => ({
   userId: row.user_id,
   groupLink: row.group_link,
   groupName: row.group_name,
+  subscriptionPriceInr: row.subscription_price_inr,
+  subscriptionStatus: row.subscription_status,
 });
 
 const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettings => ({

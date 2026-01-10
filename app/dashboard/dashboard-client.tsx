@@ -52,6 +52,8 @@ export default function DashboardClient({
   const [newGroupLink, setNewGroupLink] = React.useState("");
   const [newGroupName, setNewGroupName] = React.useState("");
   const canEdit = hasLoaded && Boolean(activeGroupId);
+  const activeGroup =
+    groups.find((group) => group.id === activeGroupId) ?? null;
 
   React.useEffect(() => {
     let isActive = true;
@@ -255,7 +257,7 @@ export default function DashboardClient({
                     <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
                       Step 1
                     </span>
-                    <span>Add your WhatsApp group invite link.</span>
+                    <span>Add your WhatsApp group invite link and subscribe.</span>
                   </div>
                   <div className="flex gap-3">
                     <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
@@ -316,7 +318,7 @@ export default function DashboardClient({
               <CardTitle>Groups</CardTitle>
               <CardDescription>
                 Add up to 50 groups. Select a group to edit its moderation
-                settings.
+                settings. Subscription is Rs 299 per group.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -377,6 +379,35 @@ export default function DashboardClient({
                   ))
                 )}
               </div>
+              {activeGroup ? (
+                <div className="rounded-2xl border border-[#e2dad0] bg-white p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
+                    Active group
+                  </p>
+                  <p className="mt-2 text-sm text-[#161616]">
+                    {activeGroup.groupName ??
+                      activeGroup.groupLink ??
+                      "Untitled group"}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant="soft">
+                      Rs {activeGroup.subscriptionPriceInr}
+                    </Badge>
+                    <Badge
+                      variant={
+                        activeGroup.subscriptionStatus === "active"
+                          ? "dark"
+                          : "default"
+                      }
+                    >
+                      {activeGroup.subscriptionStatus}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-xs text-[#6b6b6b]">
+                    Payments coming soon.
+                  </p>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </section>

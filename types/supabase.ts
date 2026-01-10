@@ -12,6 +12,8 @@ export type ModerationGroupRow = {
   user_id: string;
   group_link: string | null;
   group_name: string | null;
+  subscription_price_inr: number;
+  subscription_status: string;
   created_at: string;
   updated_at: string;
 };
@@ -21,6 +23,8 @@ export type ModerationGroup = {
   userId: string;
   groupLink: string | null;
   groupName: string | null;
+  subscriptionPriceInr: number;
+  subscriptionStatus: string;
 };
 
 export type ModerationSettingsRow = {
