@@ -45,10 +45,11 @@ const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettingsState => 
 });
 
 export async function getModerationSettings() {
-  const userId = "21312311212"
+  const { isAuthenticated } = await auth()
+  const user = await currentUser()
 
-  if (!userId) {
-    return null;
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
   const { data, error } = await supabase
@@ -56,7 +57,7 @@ export async function getModerationSettings() {
     .select(
       "user_id, block_phone_numbers, block_links, block_keywords, spam_protection_enabled, blocked_keywords",
     )
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .single();
 
   if (error && error.code !== "PGRST116") {

@@ -42,6 +42,7 @@ export default function DashboardClient({
   const [keywordInput, setKeywordInput] = React.useState("");
   const [keywords, setKeywords] = React.useState<string[]>(defaultKeywords);
   const [isSyncing, setIsSyncing] = React.useState(false);
+  const [hasLoaded, setHasLoaded] = React.useState(false);
 
   React.useEffect(() => {
     let isActive = true;
@@ -72,6 +73,7 @@ export default function DashboardClient({
       } finally {
         if (isActive) {
           setIsSyncing(false);
+          setHasLoaded(true);
         }
       }
     };
@@ -99,6 +101,7 @@ export default function DashboardClient({
   );
 
   const handleToggle = (key: keyof typeof toggles) => (value: boolean) => {
+    if (!hasLoaded) return;
     setToggles((prev) => ({ ...prev, [key]: value }));
     const mapKey = {
       phoneNumbers: "blockPhoneNumbers",
@@ -110,6 +113,7 @@ export default function DashboardClient({
   };
 
   const addKeywords = () => {
+    if (!hasLoaded) return;
     const next = keywordInput
       .split(",")
       .map((entry) => entry.trim())
@@ -291,7 +295,12 @@ export default function DashboardClient({
                   <div className="flex items-center justify-between gap-6">
                     <Label className="text-base">{item.label}</Label>
                     <Switch
-                      checked={toggles[item.id as keyof typeof toggles]}
+                      checked={
+                        hasLoaded
+                          ? toggles[item.id as keyof typeof toggles]
+                          : false
+                      }
+                      disabled={!hasLoaded || isSyncing}
                       onCheckedChange={handleToggle(
                         item.id as keyof typeof toggles,
                       )}
