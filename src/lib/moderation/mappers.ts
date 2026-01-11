@@ -14,6 +14,9 @@ export const mapGroupRow = (row: ModerationGroupRow): ModerationGroup => ({
   groupName: row.group_name,
   subscriptionPriceInr: row.subscription_price_inr,
   subscriptionStatus: row.subscription_status,
+  isVerified: row.is_verified,
+  verifiedAt: row.verified_at,
+  verifiedWhapiGroupId: row.verified_whapi_group_id,
 });
 
 export const mapSettingsRow = (

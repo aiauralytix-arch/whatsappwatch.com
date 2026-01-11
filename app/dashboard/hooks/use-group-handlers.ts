@@ -5,6 +5,8 @@ import * as React from "react";
 import {
   createModerationGroup,
   deleteModerationGroup,
+  updateModerationGroupName,
+  verifyModerationGroup,
 } from "@/src/actions/moderation/groups.actions";
 import type { ModerationContext } from "@/types/supabase";
 import type { DashboardState, DashboardStateSetters } from "@/app/dashboard/types";
@@ -64,9 +66,35 @@ export const useGroupHandlers = ({
       });
   }, [activeGroupId, refreshContext, setters]);
 
+  const handleRenameGroup = React.useCallback(
+    (groupId: string, groupName: string) => {
+      setters.setIsSyncing(true);
+      void updateModerationGroupName(groupId, groupName)
+        .then((group) => refreshContext(group.id))
+        .finally(() => {
+          setters.setIsSyncing(false);
+        });
+    },
+    [refreshContext, setters],
+  );
+
+  const handleVerifyGroup = React.useCallback(
+    (groupId: string, whapiGroupId: string) => {
+      setters.setIsSyncing(true);
+      return verifyModerationGroup(groupId, whapiGroupId)
+        .then((group) => refreshContext(group.id))
+        .finally(() => {
+          setters.setIsSyncing(false);
+        });
+    },
+    [refreshContext, setters],
+  );
+
   return {
     handleAddGroup,
     handleDeleteGroup,
     handleSelectGroup,
+    handleRenameGroup,
+    handleVerifyGroup,
   };
 };

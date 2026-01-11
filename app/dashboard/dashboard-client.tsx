@@ -69,6 +69,8 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
           onAddGroup={groupHandlers.handleAddGroup}
           onSelectGroup={groupHandlers.handleSelectGroup}
           onDeleteGroup={groupHandlers.handleDeleteGroup}
+          onRenameGroup={groupHandlers.handleRenameGroup}
+          onVerifyGroup={groupHandlers.handleVerifyGroup}
           hasLoaded={state.hasLoaded}
           isSyncing={state.isSyncing}
           groups={state.groups}

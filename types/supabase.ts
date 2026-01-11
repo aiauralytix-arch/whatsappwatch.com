@@ -16,6 +16,9 @@ export type ModerationGroupRow = {
   group_name: string | null;
   subscription_price_inr: number;
   subscription_status: string;
+  is_verified: boolean;
+  verified_at: string | null;
+  verified_whapi_group_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -27,6 +30,9 @@ export type ModerationGroup = {
   groupName: string | null;
   subscriptionPriceInr: number;
   subscriptionStatus: string;
+  isVerified: boolean;
+  verifiedAt: string | null;
+  verifiedWhapiGroupId: string | null;
 };
 
 export type ModerationSettingsRow = {

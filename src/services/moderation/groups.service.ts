@@ -15,7 +15,7 @@ import { upsertUserProfile } from "./user.service";
 
 const maxGroups = 50;
 const groupSelect =
-  "id, user_id, group_link, group_name, subscription_price_inr, subscription_status, created_at, updated_at";
+  "id, user_id, group_link, group_name, subscription_price_inr, subscription_status, is_verified, verified_at, verified_whapi_group_id, created_at, updated_at";
 
 export const getGroupsForUser = async (userId: string) => {
   const { data, error } = await supabase
@@ -165,4 +165,65 @@ export const deleteModerationGroup = async (
   if (error) {
     throw new Error("Failed to delete group.");
   }
+};
+
+export const updateModerationGroupName = async (
+  userId: string,
+  groupId: string,
+  groupName: string,
+): Promise<ModerationGroup> => {
+  const group = await getGroupForUser(userId, groupId);
+  if (!group) {
+    throw new Error("Group not found.");
+  }
+
+  const normalizedGroupName = normalizeGroupName(groupName);
+  const nextName = normalizedGroupName ?? null;
+
+  if (nextName === group.group_name) {
+    return mapGroupRow(group);
+  }
+
+  const { data, error } = await supabase
+    .from("moderation_groups")
+    .update({ group_name: nextName })
+    .eq("id", groupId)
+    .eq("user_id", userId)
+    .select(groupSelect)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Failed to update group name.");
+  }
+
+  return mapGroupRow(data);
+};
+
+export const updateModerationGroupVerification = async (
+  userId: string,
+  groupId: string,
+  whapiGroupId: string,
+): Promise<ModerationGroup> => {
+  const group = await getGroupForUser(userId, groupId);
+  if (!group) {
+    throw new Error("Group not found.");
+  }
+
+  const { data, error } = await supabase
+    .from("moderation_groups")
+    .update({
+      is_verified: true,
+      verified_at: new Date().toISOString(),
+      verified_whapi_group_id: whapiGroupId,
+    })
+    .eq("id", groupId)
+    .eq("user_id", userId)
+    .select(groupSelect)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Failed to verify group.");
+  }
+
+  return mapGroupRow(data);
 };
