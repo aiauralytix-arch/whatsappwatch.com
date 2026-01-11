@@ -37,6 +37,20 @@ const defaultToggles = {
   keywords: true,
   spamProtection: false,
 };
+const normalizeAdminNumbers = (numbers: string[]) => {
+  const normalized = numbers
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const cleaned = entry.replace(/[^\d+]/g, "");
+      if (!cleaned) return "";
+      return cleaned.startsWith("+")
+        ? `+${cleaned.slice(1).replace(/\+/g, "")}`
+        : cleaned.replace(/\+/g, "");
+    })
+    .filter(Boolean);
+  return Array.from(new Set(normalized));
+};
 
 export default function DashboardClient({
   userName,
@@ -45,6 +59,8 @@ export default function DashboardClient({
   const [toggles, setToggles] = React.useState(defaultToggles);
   const [keywordInput, setKeywordInput] = React.useState("");
   const [keywords, setKeywords] = React.useState<string[]>(defaultKeywords);
+  const [adminNumberInput, setAdminNumberInput] = React.useState("");
+  const [adminNumbers, setAdminNumbers] = React.useState<string[]>([]);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const [groups, setGroups] = React.useState<ModerationGroup[]>([]);
@@ -78,15 +94,18 @@ export default function DashboardClient({
                 ? data.settings.blockedKeywords
                 : defaultKeywords,
             );
+            setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
           } else {
             setToggles(defaultToggles);
             setKeywords(defaultKeywords);
+            setAdminNumbers([]);
           }
         }
       } catch {
         if (isActive) {
           setToggles(defaultToggles);
           setKeywords(defaultKeywords);
+          setAdminNumbers([]);
           setGroups([]);
           setActiveGroupId(null);
         }
@@ -145,6 +164,16 @@ export default function DashboardClient({
     void persistSettings({ blockedKeywords: updated });
   };
 
+  const addAdminNumbers = () => {
+    if (!canEdit) return;
+    const next = normalizeAdminNumbers(adminNumberInput.split(","));
+    if (next.length === 0) return;
+    const updated = Array.from(new Set([...adminNumbers, ...next]));
+    setAdminNumbers(updated);
+    setAdminNumberInput("");
+    void persistSettings({ adminPhoneNumbers: updated });
+  };
+
   const handleAddGroup = () => {
     if (!hasLoaded) return;
     const trimmed = newGroupLink.trim();
@@ -169,9 +198,11 @@ export default function DashboardClient({
               ? data.settings.blockedKeywords
               : defaultKeywords,
           );
+          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
         } else {
           setToggles(defaultToggles);
           setKeywords(defaultKeywords);
+          setAdminNumbers([]);
         }
       })
       .finally(() => {
@@ -198,9 +229,11 @@ export default function DashboardClient({
               ? data.settings.blockedKeywords
               : defaultKeywords,
           );
+          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
         } else {
           setToggles(defaultToggles);
           setKeywords(defaultKeywords);
+          setAdminNumbers([]);
         }
       })
       .finally(() => {
@@ -466,6 +499,51 @@ export default function DashboardClient({
                   <Separator />
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section>
+          <Card className="bg-[#fefcf9]">
+            <CardHeader>
+              <CardTitle>Admin Allowlist</CardTitle>
+              <CardDescription>
+                Messages from these numbers will never be auto-deleted.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Input
+                  placeholder="Add admin numbers (comma separated, include country code)"
+                  value={adminNumberInput}
+                  onChange={(event) => setAdminNumberInput(event.target.value)}
+                  disabled={!canEdit || isSyncing}
+                />
+                <Button
+                  variant="outline"
+                  className="whitespace-nowrap"
+                  onClick={addAdminNumbers}
+                  disabled={!canEdit || isSyncing}
+                >
+                  Add Admins
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {adminNumbers.length === 0 ? (
+                  <p className="text-sm text-[#6b6b6b]">
+                    No admin numbers added yet.
+                  </p>
+                ) : (
+                  adminNumbers.map((number) => (
+                    <Badge key={number} variant="soft">
+                      {number}
+                    </Badge>
+                  ))
+                )}
+              </div>
+              <p className="text-sm text-[#6b6b6b]">
+                Use full numbers with country codes for reliable matching.
+              </p>
             </CardContent>
           </Card>
         </section>

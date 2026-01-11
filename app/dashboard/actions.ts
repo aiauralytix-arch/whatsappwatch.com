@@ -17,7 +17,7 @@ const maxGroups = 50;
 const groupSelect =
   "id, user_id, group_link, group_name, subscription_price_inr, subscription_status, created_at, updated_at";
 const settingsSelect =
-  "id, user_id, group_id, block_phone_numbers, block_links, block_keywords, spam_protection_enabled, blocked_keywords";
+  "id, user_id, group_id, block_phone_numbers, block_links, block_keywords, spam_protection_enabled, blocked_keywords, admin_phone_numbers";
 
 const mapGroupRow = (row: ModerationGroupRow): ModerationGroup => ({
   id: row.id,
@@ -36,6 +36,7 @@ const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettings => ({
   blockKeywords: row.block_keywords,
   spamProtectionEnabled: row.spam_protection_enabled,
   blockedKeywords: row.blocked_keywords ?? [],
+  adminPhoneNumbers: row.admin_phone_numbers ?? [],
 });
 
 const normalizeGroupLink = (groupLink: string) => {
@@ -64,6 +65,23 @@ const normalizeKeywords = (keywords?: string[]) => {
     .map((entry) => entry.trim())
     .filter(Boolean)
     .slice(0, 100);
+};
+
+const normalizePhoneNumbers = (numbers?: string[]) => {
+  if (!numbers) return undefined;
+  const normalized = numbers
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const cleaned = entry.replace(/[^\d+]/g, "");
+      if (!cleaned) return "";
+      return cleaned.startsWith("+")
+        ? `+${cleaned.slice(1).replace(/\+/g, "")}`
+        : cleaned.replace(/\+/g, "");
+    })
+    .filter(Boolean);
+  return Array.from(new Set(normalized)).slice(0, 50);
 };
 
 const upsertUser = async (user: NonNullable<Awaited<ReturnType<typeof currentUser>>>) => {
@@ -273,6 +291,7 @@ export async function updateModerationSettings(
 
   const current = currentData ? mapSettingsRow(currentData) : null;
   const sanitizedKeywords = normalizeKeywords(input.blockedKeywords);
+  const sanitizedAdminNumbers = normalizePhoneNumbers(input.adminPhoneNumbers);
 
   const next: ModerationSettings = {
     userId: user.id,
@@ -284,6 +303,8 @@ export async function updateModerationSettings(
     spamProtectionEnabled:
       input.spamProtectionEnabled ?? current?.spamProtectionEnabled ?? false,
     blockedKeywords: sanitizedKeywords ?? current?.blockedKeywords ?? [],
+    adminPhoneNumbers:
+      sanitizedAdminNumbers ?? current?.adminPhoneNumbers ?? [],
   };
 
   const { data, error } = await supabase
@@ -297,6 +318,7 @@ export async function updateModerationSettings(
         block_keywords: next.blockKeywords,
         spam_protection_enabled: next.spamProtectionEnabled,
         blocked_keywords: next.blockedKeywords,
+        admin_phone_numbers: next.adminPhoneNumbers,
       },
       { onConflict: "group_id" },
     )

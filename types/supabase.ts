@@ -36,6 +36,7 @@ export type ModerationSettingsRow = {
   block_keywords: boolean;
   spam_protection_enabled: boolean;
   blocked_keywords: string[];
+  admin_phone_numbers: string[];
 };
 
 export type ModerationSettings = {
@@ -46,6 +47,7 @@ export type ModerationSettings = {
   blockKeywords: boolean;
   spamProtectionEnabled: boolean;
   blockedKeywords: string[];
+  adminPhoneNumbers: string[];
 };
 
 export type ModerationSettingsInput = {
@@ -54,6 +56,7 @@ export type ModerationSettingsInput = {
   blockKeywords?: boolean;
   spamProtectionEnabled?: boolean;
   blockedKeywords?: string[];
+  adminPhoneNumbers?: string[];
 };
 
 export type ModerationContext = {
