@@ -6,6 +6,9 @@ import { supabase } from "@/lib/supabase";
 
 import type {
   ModerationContext,
+  ModerationDefaults,
+  ModerationDefaultsInput,
+  ModerationDefaultsRow,
   ModerationGroup,
   ModerationGroupRow,
   ModerationSettings,
@@ -18,6 +21,14 @@ const groupSelect =
   "id, user_id, group_link, group_name, subscription_price_inr, subscription_status, created_at, updated_at";
 const settingsSelect =
   "id, user_id, group_id, block_phone_numbers, block_links, block_keywords, spam_protection_enabled, blocked_keywords, admin_phone_numbers";
+const defaultsSelect =
+  "id, user_id, blocked_keywords, admin_phone_numbers, created_at, updated_at";
+const defaultSettings = {
+  block_phone_numbers: true,
+  block_links: true,
+  block_keywords: true,
+  spam_protection_enabled: false,
+};
 
 const mapGroupRow = (row: ModerationGroupRow): ModerationGroup => ({
   id: row.id,
@@ -35,6 +46,12 @@ const mapSettingsRow = (row: ModerationSettingsRow): ModerationSettings => ({
   blockLinks: row.block_links,
   blockKeywords: row.block_keywords,
   spamProtectionEnabled: row.spam_protection_enabled,
+  blockedKeywords: row.blocked_keywords ?? [],
+  adminPhoneNumbers: row.admin_phone_numbers ?? [],
+});
+
+const mapDefaultsRow = (row: ModerationDefaultsRow): ModerationDefaults => ({
+  userId: row.user_id,
   blockedKeywords: row.blocked_keywords ?? [],
   adminPhoneNumbers: row.admin_phone_numbers ?? [],
 });
@@ -82,6 +99,23 @@ const normalizePhoneNumbers = (numbers?: string[]) => {
     })
     .filter(Boolean);
   return Array.from(new Set(normalized)).slice(0, 50);
+};
+
+const mergeUnique = (current: string[], next: string[]) =>
+  Array.from(new Set([...current, ...next]));
+
+const getModerationDefaultsForUser = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("moderation_defaults")
+    .select(defaultsSelect)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error && error.code !== "PGRST116") {
+    throw new Error("Failed to load moderation defaults.");
+  }
+
+  return data ? mapDefaultsRow(data) : null;
 };
 
 const upsertUser = async (user: NonNullable<Awaited<ReturnType<typeof currentUser>>>) => {
@@ -145,13 +179,14 @@ export async function getModerationSettings(
 
   const groupRows = await getGroupsForUser(user.id);
   const groups = groupRows.map(mapGroupRow);
+  const defaults = await getModerationDefaultsForUser(user.id);
   const activeGroup =
     (groupId && groupRows.find((group) => group.id === groupId)) ||
     groupRows[0] ||
     null;
 
   if (!activeGroup) {
-    return { groups, activeGroupId: null, settings: null };
+    return { groups, activeGroupId: null, settings: null, defaults };
   }
 
   const { data, error } = await supabase
@@ -169,6 +204,7 @@ export async function getModerationSettings(
     groups,
     activeGroupId: activeGroup.id,
     settings: data ? mapSettingsRow(data) : null,
+    defaults,
   };
 }
 
@@ -252,7 +288,166 @@ export async function createModerationGroup(
     throw new Error("Failed to create group.");
   }
 
+  const defaults = await getModerationDefaultsForUser(user.id);
+  if (
+    defaults &&
+    (defaults.adminPhoneNumbers.length > 0 || defaults.blockedKeywords.length > 0)
+  ) {
+    const { error: settingsError } = await supabase
+      .from("moderation_settings")
+      .upsert(
+        {
+          user_id: user.id,
+          group_id: data.id,
+          block_phone_numbers: defaultSettings.block_phone_numbers,
+          block_links: defaultSettings.block_links,
+          block_keywords: defaultSettings.block_keywords,
+          spam_protection_enabled: defaultSettings.spam_protection_enabled,
+          blocked_keywords: defaults.blockedKeywords,
+          admin_phone_numbers: defaults.adminPhoneNumbers,
+        },
+        { onConflict: "group_id" },
+      );
+
+    if (settingsError) {
+      throw new Error("Failed to apply default settings.");
+    }
+  }
+
   return mapGroupRow(data);
+}
+
+export async function updateModerationDefaults(
+  input: ModerationDefaultsInput,
+): Promise<ModerationDefaults> {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  await upsertUser(user);
+
+  const current = await getModerationDefaultsForUser(user.id);
+  const sanitizedKeywords = normalizeKeywords(input.blockedKeywords);
+  const sanitizedAdminNumbers = normalizePhoneNumbers(input.adminPhoneNumbers);
+
+  const next: ModerationDefaults = {
+    userId: user.id,
+    blockedKeywords: sanitizedKeywords ?? current?.blockedKeywords ?? [],
+    adminPhoneNumbers:
+      sanitizedAdminNumbers ?? current?.adminPhoneNumbers ?? [],
+  };
+
+  const { data, error } = await supabase
+    .from("moderation_defaults")
+    .upsert(
+      {
+        user_id: user.id,
+        blocked_keywords: next.blockedKeywords,
+        admin_phone_numbers: next.adminPhoneNumbers,
+      },
+      { onConflict: "user_id" },
+    )
+    .select(defaultsSelect)
+    .single();
+
+  if (error || !data) {
+    throw new Error("Failed to update moderation defaults.");
+  }
+
+  return mapDefaultsRow(data);
+}
+
+export async function applyModerationDefaultsToGroups(
+  groupIds: string[],
+): Promise<{ updatedGroupIds: string[] }> {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const uniqueGroupIds = Array.from(
+    new Set(groupIds.filter((id) => typeof id === "string" && id.length > 0)),
+  );
+
+  if (uniqueGroupIds.length === 0) {
+    throw new Error("Select at least one group.");
+  }
+
+  const defaults = await getModerationDefaultsForUser(user.id);
+
+  if (
+    !defaults ||
+    (defaults.adminPhoneNumbers.length === 0 &&
+      defaults.blockedKeywords.length === 0)
+  ) {
+    throw new Error("No default lists configured.");
+  }
+
+  const { data: groupRows, error: groupError } = await supabase
+    .from("moderation_groups")
+    .select("id")
+    .eq("user_id", user.id)
+    .in("id", uniqueGroupIds);
+
+  if (groupError) {
+    throw new Error("Failed to load groups.");
+  }
+
+  const allowedGroupIds = (groupRows ?? []).map((group) => group.id);
+
+  if (allowedGroupIds.length === 0) {
+    throw new Error("No matching groups found.");
+  }
+
+  const { data: existingSettings, error: settingsError } = await supabase
+    .from("moderation_settings")
+    .select(settingsSelect)
+    .eq("user_id", user.id)
+    .in("group_id", allowedGroupIds);
+
+  if (settingsError) {
+    throw new Error("Failed to load moderation settings.");
+  }
+
+  const settingsByGroup = new Map(
+    (existingSettings ?? []).map((row) => [row.group_id, row]),
+  );
+
+  const updates = allowedGroupIds.map((groupId) => {
+    const current = settingsByGroup.get(groupId);
+    const currentKeywords = current?.blocked_keywords ?? [];
+    const currentAdmins = current?.admin_phone_numbers ?? [];
+
+    return {
+      user_id: user.id,
+      group_id: groupId,
+      block_phone_numbers:
+        current?.block_phone_numbers ?? defaultSettings.block_phone_numbers,
+      block_links: current?.block_links ?? defaultSettings.block_links,
+      block_keywords: current?.block_keywords ?? defaultSettings.block_keywords,
+      spam_protection_enabled:
+        current?.spam_protection_enabled ??
+        defaultSettings.spam_protection_enabled,
+      blocked_keywords: mergeUnique(currentKeywords, defaults.blockedKeywords),
+      admin_phone_numbers: mergeUnique(
+        currentAdmins,
+        defaults.adminPhoneNumbers,
+      ),
+    };
+  });
+
+  const { error: updateError } = await supabase
+    .from("moderation_settings")
+    .upsert(updates, { onConflict: "group_id" });
+
+  if (updateError) {
+    throw new Error("Failed to apply defaults.");
+  }
+
+  return { updatedGroupIds: allowedGroupIds };
 }
 
 export async function updateModerationSettings(

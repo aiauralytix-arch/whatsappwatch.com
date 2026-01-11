@@ -59,8 +59,29 @@ export type ModerationSettingsInput = {
   adminPhoneNumbers?: string[];
 };
 
+export type ModerationDefaultsRow = {
+  id: string;
+  user_id: string;
+  blocked_keywords: string[];
+  admin_phone_numbers: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type ModerationDefaults = {
+  userId: string;
+  blockedKeywords: string[];
+  adminPhoneNumbers: string[];
+};
+
+export type ModerationDefaultsInput = {
+  blockedKeywords?: string[];
+  adminPhoneNumbers?: string[];
+};
+
 export type ModerationContext = {
   groups: ModerationGroup[];
   activeGroupId: string | null;
   settings: ModerationSettings | null;
+  defaults: ModerationDefaults | null;
 };

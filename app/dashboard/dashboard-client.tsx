@@ -16,12 +16,15 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
+  applyModerationDefaultsToGroups,
   createModerationGroup,
   getModerationSettings,
+  updateModerationDefaults,
   updateModerationSettings,
 } from "./actions";
 import type {
   ModerationGroup,
+  ModerationDefaultsInput,
   ModerationSettingsInput,
 } from "@/types/supabase";
 
@@ -30,13 +33,18 @@ type DashboardClientProps = {
   userEmail: string;
 };
 
-const defaultKeywords = ["giveaway", "promo", "loan"];
+const fallbackKeywords = ["giveaway", "promo", "loan"];
 const defaultToggles = {
   phoneNumbers: true,
   links: true,
   keywords: true,
   spamProtection: false,
 };
+const normalizeKeywords = (input: string) =>
+  input
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 const normalizeAdminNumbers = (numbers: string[]) => {
   const normalized = numbers
     .map((entry) => entry.trim())
@@ -58,15 +66,22 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [toggles, setToggles] = React.useState(defaultToggles);
   const [keywordInput, setKeywordInput] = React.useState("");
-  const [keywords, setKeywords] = React.useState<string[]>(defaultKeywords);
+  const [keywords, setKeywords] = React.useState<string[]>(fallbackKeywords);
+  const [sharedKeywordInput, setSharedKeywordInput] = React.useState("");
+  const [sharedKeywords, setSharedKeywords] = React.useState<string[]>([]);
   const [adminNumberInput, setAdminNumberInput] = React.useState("");
   const [adminNumbers, setAdminNumbers] = React.useState<string[]>([]);
+  const [sharedAdminInput, setSharedAdminInput] = React.useState("");
+  const [sharedAdminNumbers, setSharedAdminNumbers] = React.useState<string[]>(
+    [],
+  );
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const [groups, setGroups] = React.useState<ModerationGroup[]>([]);
   const [activeGroupId, setActiveGroupId] = React.useState<string | null>(null);
   const [newGroupLink, setNewGroupLink] = React.useState("");
   const [newGroupName, setNewGroupName] = React.useState("");
+  const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>([]);
   const canEdit = hasLoaded && Boolean(activeGroupId);
   const activeGroup =
     groups.find((group) => group.id === activeGroupId) ?? null;
@@ -82,6 +97,13 @@ export default function DashboardClient({
         if (isActive) {
           setGroups(data.groups);
           setActiveGroupId(data.activeGroupId);
+          setSharedKeywords(data.defaults?.blockedKeywords ?? []);
+          setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
+          const nextFallbackKeywords =
+            data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
+              ? data.defaults.blockedKeywords
+              : fallbackKeywords;
+          const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
           if (data.settings) {
             setToggles({
               phoneNumbers: data.settings.blockPhoneNumbers,
@@ -89,23 +111,21 @@ export default function DashboardClient({
               keywords: data.settings.blockKeywords,
               spamProtection: data.settings.spamProtectionEnabled,
             });
-            setKeywords(
-              data.settings.blockedKeywords.length > 0
-                ? data.settings.blockedKeywords
-                : defaultKeywords,
-            );
+            setKeywords(data.settings.blockedKeywords ?? []);
             setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
           } else {
             setToggles(defaultToggles);
-            setKeywords(defaultKeywords);
-            setAdminNumbers([]);
+            setKeywords(nextFallbackKeywords);
+            setAdminNumbers(nextFallbackAdmins);
           }
         }
       } catch {
         if (isActive) {
           setToggles(defaultToggles);
-          setKeywords(defaultKeywords);
+          setKeywords(fallbackKeywords);
           setAdminNumbers([]);
+          setSharedKeywords([]);
+          setSharedAdminNumbers([]);
           setGroups([]);
           setActiveGroupId(null);
         }
@@ -151,10 +171,7 @@ export default function DashboardClient({
 
   const addKeywords = () => {
     if (!canEdit) return;
-    const next = keywordInput
-      .split(",")
-      .map((entry) => entry.trim())
-      .filter(Boolean);
+    const next = normalizeKeywords(keywordInput);
 
     if (next.length === 0) return;
 
@@ -174,6 +191,92 @@ export default function DashboardClient({
     void persistSettings({ adminPhoneNumbers: updated });
   };
 
+  const persistDefaults = React.useCallback(
+    async (input: ModerationDefaultsInput) => {
+      if (!hasLoaded) return;
+      setIsSyncing(true);
+      try {
+        const updated = await updateModerationDefaults(input);
+        setSharedKeywords(updated.blockedKeywords ?? []);
+        setSharedAdminNumbers(updated.adminPhoneNumbers ?? []);
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [hasLoaded],
+  );
+
+  const addSharedKeywords = () => {
+    if (!hasLoaded) return;
+    const next = normalizeKeywords(sharedKeywordInput);
+    if (next.length === 0) return;
+    const updated = Array.from(new Set([...sharedKeywords, ...next]));
+    setSharedKeywords(updated);
+    setSharedKeywordInput("");
+    void persistDefaults({ blockedKeywords: updated });
+  };
+
+  const addSharedAdminNumbers = () => {
+    if (!hasLoaded) return;
+    const next = normalizeAdminNumbers(sharedAdminInput.split(","));
+    if (next.length === 0) return;
+    const updated = Array.from(new Set([...sharedAdminNumbers, ...next]));
+    setSharedAdminNumbers(updated);
+    setSharedAdminInput("");
+    void persistDefaults({ adminPhoneNumbers: updated });
+  };
+
+  const toggleGroupSelection = (groupId: string) => {
+    setSelectedGroupIds((prev) =>
+      prev.includes(groupId)
+        ? prev.filter((id) => id !== groupId)
+        : [...prev, groupId],
+    );
+  };
+
+  const selectAllGroups = () => {
+    setSelectedGroupIds(groups.map((group) => group.id));
+  };
+
+  const clearSelectedGroups = () => {
+    setSelectedGroupIds([]);
+  };
+
+  const applyDefaultsToSelectedGroups = () => {
+    if (!hasLoaded || selectedGroupIds.length === 0) return;
+    setIsSyncing(true);
+    void applyModerationDefaultsToGroups(selectedGroupIds)
+      .then(() => getModerationSettings(activeGroupId ?? undefined))
+      .then((data) => {
+        setGroups(data.groups);
+        setActiveGroupId(data.activeGroupId);
+        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
+        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
+        const nextFallbackKeywords =
+          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
+            ? data.defaults.blockedKeywords
+            : fallbackKeywords;
+        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
+        if (data.settings) {
+          setToggles({
+            phoneNumbers: data.settings.blockPhoneNumbers,
+            links: data.settings.blockLinks,
+            keywords: data.settings.blockKeywords,
+            spamProtection: data.settings.spamProtectionEnabled,
+          });
+          setKeywords(data.settings.blockedKeywords ?? []);
+          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
+        } else {
+          setToggles(defaultToggles);
+          setKeywords(nextFallbackKeywords);
+          setAdminNumbers(nextFallbackAdmins);
+        }
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
+  };
+
   const handleAddGroup = () => {
     if (!hasLoaded) return;
     const trimmed = newGroupLink.trim();
@@ -184,8 +287,15 @@ export default function DashboardClient({
       .then((data) => {
         setGroups(data.groups);
         setActiveGroupId(data.activeGroupId);
+        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
+        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
         setNewGroupLink("");
         setNewGroupName("");
+        const nextFallbackKeywords =
+          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
+            ? data.defaults.blockedKeywords
+            : fallbackKeywords;
+        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
         if (data.settings) {
           setToggles({
             phoneNumbers: data.settings.blockPhoneNumbers,
@@ -193,16 +303,12 @@ export default function DashboardClient({
             keywords: data.settings.blockKeywords,
             spamProtection: data.settings.spamProtectionEnabled,
           });
-          setKeywords(
-            data.settings.blockedKeywords.length > 0
-              ? data.settings.blockedKeywords
-              : defaultKeywords,
-          );
+          setKeywords(data.settings.blockedKeywords ?? []);
           setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
         } else {
           setToggles(defaultToggles);
-          setKeywords(defaultKeywords);
-          setAdminNumbers([]);
+          setKeywords(nextFallbackKeywords);
+          setAdminNumbers(nextFallbackAdmins);
         }
       })
       .finally(() => {
@@ -217,6 +323,13 @@ export default function DashboardClient({
       .then((data) => {
         setGroups(data.groups);
         setActiveGroupId(data.activeGroupId);
+        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
+        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
+        const nextFallbackKeywords =
+          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
+            ? data.defaults.blockedKeywords
+            : fallbackKeywords;
+        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
         if (data.settings) {
           setToggles({
             phoneNumbers: data.settings.blockPhoneNumbers,
@@ -224,16 +337,12 @@ export default function DashboardClient({
             keywords: data.settings.blockKeywords,
             spamProtection: data.settings.spamProtectionEnabled,
           });
-          setKeywords(
-            data.settings.blockedKeywords.length > 0
-              ? data.settings.blockedKeywords
-              : defaultKeywords,
-          );
+          setKeywords(data.settings.blockedKeywords ?? []);
           setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
         } else {
           setToggles(defaultToggles);
-          setKeywords(defaultKeywords);
-          setAdminNumbers([]);
+          setKeywords(nextFallbackKeywords);
+          setAdminNumbers(nextFallbackAdmins);
         }
       })
       .finally(() => {
@@ -441,6 +550,152 @@ export default function DashboardClient({
                   </p>
                 </div>
               ) : null}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section>
+          <Card className="bg-[#fefcf9]">
+            <CardHeader>
+              <CardTitle>Shared Defaults</CardTitle>
+              <CardDescription>
+                Maintain shared admin numbers and keywords for new groups, then
+                apply them to existing groups in bulk.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="space-y-3">
+                  <Label className="text-base">Default admin allowlist</Label>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input
+                      placeholder="Add default admin numbers (comma separated)"
+                      value={sharedAdminInput}
+                      onChange={(event) =>
+                        setSharedAdminInput(event.target.value)
+                      }
+                      disabled={!hasLoaded || isSyncing}
+                    />
+                    <Button
+                      variant="outline"
+                      className="whitespace-nowrap"
+                      onClick={addSharedAdminNumbers}
+                      disabled={!hasLoaded || isSyncing}
+                    >
+                      Save Admins
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {sharedAdminNumbers.length === 0 ? (
+                      <p className="text-sm text-[#6b6b6b]">
+                        No default admin numbers yet.
+                      </p>
+                    ) : (
+                      sharedAdminNumbers.map((number) => (
+                        <Badge key={number} variant="soft">
+                          {number}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-base">Default keyword blocklist</Label>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input
+                      placeholder="Add default keywords (comma separated)"
+                      value={sharedKeywordInput}
+                      onChange={(event) =>
+                        setSharedKeywordInput(event.target.value)
+                      }
+                      disabled={!hasLoaded || isSyncing}
+                    />
+                    <Button
+                      variant="outline"
+                      className="whitespace-nowrap"
+                      onClick={addSharedKeywords}
+                      disabled={!hasLoaded || isSyncing}
+                    >
+                      Save Keywords
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {sharedKeywords.length === 0 ? (
+                      <p className="text-sm text-[#6b6b6b]">
+                        No default keywords yet.
+                      </p>
+                    ) : (
+                      sharedKeywords.map((keyword) => (
+                        <Badge key={keyword} variant="soft">
+                          {keyword}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[#e2dad0] bg-white p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
+                  Apply defaults to existing groups
+                </p>
+                <p className="mt-2 text-sm text-[#6b6b6b]">
+                  Select groups below. Defaults are merged with each group and
+                  do not change toggle settings.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {groups.length === 0 ? (
+                    <p className="text-sm text-[#6b6b6b]">
+                      Add a group to enable bulk updates.
+                    </p>
+                  ) : (
+                    groups.map((group) => {
+                      const isSelected = selectedGroupIds.includes(group.id);
+                      return (
+                        <Button
+                          key={group.id}
+                          size="sm"
+                          variant={isSelected ? "default" : "outline"}
+                          onClick={() => toggleGroupSelection(group.id)}
+                          disabled={isSyncing}
+                          title={
+                            group.groupName ?? group.groupLink ?? "Untitled group"
+                          }
+                          className="max-w-[260px] truncate"
+                        >
+                          {group.groupName ?? group.groupLink ?? "Untitled group"}
+                        </Button>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={selectAllGroups}
+                    disabled={groups.length === 0 || isSyncing}
+                  >
+                    Select all
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={clearSelectedGroups}
+                    disabled={selectedGroupIds.length === 0 || isSyncing}
+                  >
+                    Clear selection
+                  </Button>
+                  <Button
+                    onClick={applyDefaultsToSelectedGroups}
+                    disabled={
+                      selectedGroupIds.length === 0 ||
+                      isSyncing ||
+                      sharedAdminNumbers.length + sharedKeywords.length === 0
+                    }
+                  >
+                    Apply defaults to {selectedGroupIds.length} group
+                    {selectedGroupIds.length === 1 ? "" : "s"}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </section>
