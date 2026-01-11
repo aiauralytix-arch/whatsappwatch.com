@@ -32,4 +32,4 @@ These must be present or the app will fail at runtime:
 Clerk variables are required to run auth, but are not referenced directly in code. See `ARCHITECTURE.md` for notes on what is UNKNOWN/NEEDS CONFIRMATION.
 
 ## Supabase migrations
-Schema lives in `supabase/migrations/*.sql`. Apply migrations in order (0001 → 0005) in Supabase SQL editor.
+Schema lives in `supabase/migrations/*.sql`. Apply migrations in order (0001 → 0006) in Supabase SQL editor.

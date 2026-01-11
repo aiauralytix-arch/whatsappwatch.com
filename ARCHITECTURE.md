@@ -8,8 +8,9 @@
 
 ## Architecture map
 **Frontend (Next.js App Router)**
-- Marketing pages in `app/` (`/`, `/process`, `/system`, `/stories`, `/contact`).
+- Marketing pages in `app/(static)` (`/`, `/process`, `/system`, `/stories`, `/contact`).
 - Authenticated dashboard in `app/dashboard` (client UI + server actions).
+- Auth pages in `app/(auth)` (`/sign-in`, `/sign-up`).
 - Tailwind CSS for styling, Radix UI primitives in `components/ui`.
 
 **Backend (Server actions only)**
@@ -56,6 +57,10 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - Stores moderation toggles and arrays for keywords/admin allowlist.
 - `group_id` has a foreign key to `moderation_groups`.
 
+**moderation_defaults**
+- One row per user (`user_id` is unique).
+- Stores shared admin numbers and keywords applied to new groups or bulk updates.
+
 ## Auth & middleware deep dive
 - `lib/auth/server.ts` re-exports Clerk server helpers:
   - `authMiddleware` is `clerkMiddleware`.
@@ -71,6 +76,14 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - App Router routes, layouts, and server/client components.
 - Server actions live in route folders (e.g., `app/dashboard/actions.ts`).
 - NEVER import server-only modules (like `lib/supabase.ts`) into client components.
+
+**app/(static)/**
+- Static marketing routes (kept separate from dashboard/auth).
+- NEVER place authenticated or server action logic here.
+
+**app/(auth)/**
+- Sign-in/up routes powered by Clerk.
+- NEVER add app business logic here beyond auth screens.
 
 **components/**
 - Reusable UI building blocks (Radix + Tailwind).
