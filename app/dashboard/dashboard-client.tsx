@@ -554,151 +554,157 @@ export default function DashboardClient({
           </Card>
         </section>
 
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>Shared Defaults</CardTitle>
-              <CardDescription>
-                Maintain shared admin numbers and keywords for new groups, then
-                apply them to existing groups in bulk.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-3">
-                  <Label className="text-base">Default admin allowlist</Label>
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <Input
-                      placeholder="Add default admin numbers (comma separated)"
-                      value={sharedAdminInput}
-                      onChange={(event) =>
-                        setSharedAdminInput(event.target.value)
-                      }
-                      disabled={!hasLoaded || isSyncing}
-                    />
-                    <Button
-                      variant="outline"
-                      className="whitespace-nowrap"
-                      onClick={addSharedAdminNumbers}
-                      disabled={!hasLoaded || isSyncing}
-                    >
-                      Save Admins
-                    </Button>
+        {hasLoaded && groups.length > 1 ? (
+          <section>
+            <Card className="bg-[#fefcf9]">
+              <CardHeader>
+                <CardTitle>Shared Defaults</CardTitle>
+                <CardDescription>
+                  Maintain shared admin numbers and keywords for new groups, then
+                  apply them to existing groups in bulk.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="space-y-3">
+                    <Label className="text-base">Default admin allowlist</Label>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Input
+                        placeholder="Add default admin numbers (comma separated)"
+                        value={sharedAdminInput}
+                        onChange={(event) =>
+                          setSharedAdminInput(event.target.value)
+                        }
+                        disabled={!hasLoaded || isSyncing}
+                      />
+                      <Button
+                        variant="outline"
+                        className="whitespace-nowrap"
+                        onClick={addSharedAdminNumbers}
+                        disabled={!hasLoaded || isSyncing}
+                      >
+                        Save Admins
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {sharedAdminNumbers.length === 0 ? (
+                        <p className="text-sm text-[#6b6b6b]">
+                          No default admin numbers yet.
+                        </p>
+                      ) : (
+                        sharedAdminNumbers.map((number) => (
+                          <Badge key={number} variant="soft">
+                            {number}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {sharedAdminNumbers.length === 0 ? (
+                  <div className="space-y-3">
+                    <Label className="text-base">Default keyword blocklist</Label>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Input
+                        placeholder="Add default keywords (comma separated)"
+                        value={sharedKeywordInput}
+                        onChange={(event) =>
+                          setSharedKeywordInput(event.target.value)
+                        }
+                        disabled={!hasLoaded || isSyncing}
+                      />
+                      <Button
+                        variant="outline"
+                        className="whitespace-nowrap"
+                        onClick={addSharedKeywords}
+                        disabled={!hasLoaded || isSyncing}
+                      >
+                        Save Keywords
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {sharedKeywords.length === 0 ? (
+                        <p className="text-sm text-[#6b6b6b]">
+                          No default keywords yet.
+                        </p>
+                      ) : (
+                        sharedKeywords.map((keyword) => (
+                          <Badge key={keyword} variant="soft">
+                            {keyword}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[#e2dad0] bg-white p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
+                    Apply defaults to existing groups
+                  </p>
+                  <p className="mt-2 text-sm text-[#6b6b6b]">
+                    Select groups below. Defaults are merged with each group and
+                    do not change toggle settings.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {groups.length === 0 ? (
                       <p className="text-sm text-[#6b6b6b]">
-                        No default admin numbers yet.
+                        Add a group to enable bulk updates.
                       </p>
                     ) : (
-                      sharedAdminNumbers.map((number) => (
-                        <Badge key={number} variant="soft">
-                          {number}
-                        </Badge>
-                      ))
+                      groups.map((group) => {
+                        const isSelected = selectedGroupIds.includes(group.id);
+                        return (
+                          <Button
+                            key={group.id}
+                            size="sm"
+                            variant={isSelected ? "default" : "outline"}
+                            onClick={() => toggleGroupSelection(group.id)}
+                            disabled={isSyncing}
+                            title={
+                              group.groupName ??
+                              group.groupLink ??
+                              "Untitled group"
+                            }
+                            className="max-w-[260px] truncate"
+                          >
+                            {group.groupName ??
+                              group.groupLink ??
+                              "Untitled group"}
+                          </Button>
+                        );
+                      })
                     )}
                   </div>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base">Default keyword blocklist</Label>
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <Input
-                      placeholder="Add default keywords (comma separated)"
-                      value={sharedKeywordInput}
-                      onChange={(event) =>
-                        setSharedKeywordInput(event.target.value)
-                      }
-                      disabled={!hasLoaded || isSyncing}
-                    />
+                  <div className="mt-4 flex flex-wrap gap-3">
                     <Button
                       variant="outline"
-                      className="whitespace-nowrap"
-                      onClick={addSharedKeywords}
-                      disabled={!hasLoaded || isSyncing}
+                      onClick={selectAllGroups}
+                      disabled={groups.length === 0 || isSyncing}
                     >
-                      Save Keywords
+                      Select all
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={clearSelectedGroups}
+                      disabled={selectedGroupIds.length === 0 || isSyncing}
+                    >
+                      Clear selection
+                    </Button>
+                    <Button
+                      onClick={applyDefaultsToSelectedGroups}
+                      disabled={
+                        selectedGroupIds.length === 0 ||
+                        isSyncing ||
+                        sharedAdminNumbers.length + sharedKeywords.length === 0
+                      }
+                    >
+                      Apply defaults to {selectedGroupIds.length} group
+                      {selectedGroupIds.length === 1 ? "" : "s"}
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {sharedKeywords.length === 0 ? (
-                      <p className="text-sm text-[#6b6b6b]">
-                        No default keywords yet.
-                      </p>
-                    ) : (
-                      sharedKeywords.map((keyword) => (
-                        <Badge key={keyword} variant="soft">
-                          {keyword}
-                        </Badge>
-                      ))
-                    )}
-                  </div>
                 </div>
-              </div>
-              <div className="rounded-2xl border border-[#e2dad0] bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
-                  Apply defaults to existing groups
-                </p>
-                <p className="mt-2 text-sm text-[#6b6b6b]">
-                  Select groups below. Defaults are merged with each group and
-                  do not change toggle settings.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {groups.length === 0 ? (
-                    <p className="text-sm text-[#6b6b6b]">
-                      Add a group to enable bulk updates.
-                    </p>
-                  ) : (
-                    groups.map((group) => {
-                      const isSelected = selectedGroupIds.includes(group.id);
-                      return (
-                        <Button
-                          key={group.id}
-                          size="sm"
-                          variant={isSelected ? "default" : "outline"}
-                          onClick={() => toggleGroupSelection(group.id)}
-                          disabled={isSyncing}
-                          title={
-                            group.groupName ?? group.groupLink ?? "Untitled group"
-                          }
-                          className="max-w-[260px] truncate"
-                        >
-                          {group.groupName ?? group.groupLink ?? "Untitled group"}
-                        </Button>
-                      );
-                    })
-                  )}
-                </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={selectAllGroups}
-                    disabled={groups.length === 0 || isSyncing}
-                  >
-                    Select all
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={clearSelectedGroups}
-                    disabled={selectedGroupIds.length === 0 || isSyncing}
-                  >
-                    Clear selection
-                  </Button>
-                  <Button
-                    onClick={applyDefaultsToSelectedGroups}
-                    disabled={
-                      selectedGroupIds.length === 0 ||
-                      isSyncing ||
-                      sharedAdminNumbers.length + sharedKeywords.length === 0
-                    }
-                  >
-                    Apply defaults to {selectedGroupIds.length} group
-                    {selectedGroupIds.length === 1 ? "" : "s"}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+              </CardContent>
+            </Card>
+          </section>
+        ) : null}
 
         <section>
           <Card className="bg-[#fefcf9]">
