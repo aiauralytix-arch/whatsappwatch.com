@@ -15,7 +15,7 @@
 
 **Backend (Server actions only)**
 - Business logic in `app/dashboard/actions.ts` (`"use server"`).
-- No custom API routes; `app/api/graphql` is currently empty.
+- No custom API routes.
 - Server actions call Supabase directly using a service role key.
 
 **Auth**

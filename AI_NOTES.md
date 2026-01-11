@@ -22,7 +22,6 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 ## Sharp edges / gotchas
 - Server actions (`"use server"`) are imported into client components; do not move that logic into shared client files.
 - Supabase RLS is not defined in migrations; the service role key bypasses RLS. This is powerful and dangerous.
-- `app/api/graphql` exists but is empty; do not assume a GraphQL API exists.
 - Static marketing routes live under `app/(static)` and auth routes under `app/(auth)`.
 - Subscription fields exist in the database but there is no payment flow.
 - Clerk env vars are required by the SDK but not referenced explicitly in code:
