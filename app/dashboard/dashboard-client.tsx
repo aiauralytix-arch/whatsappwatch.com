@@ -2,6 +2,7 @@
 
 import HeaderSection from "@/app/dashboard/sections/header-section";
 import SetupSection from "@/app/dashboard/sections/setup-section";
+import PhoneVerificationSection from "@/app/dashboard/sections/phone-verification-section";
 import TutorialSection from "@/app/dashboard/sections/tutorial-section";
 import GroupsSection from "@/app/dashboard/sections/groups-section";
 import SharedDefaultsSection from "@/app/dashboard/sections/shared-defaults-section";
@@ -58,6 +59,7 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-24 pt-16 sm:px-10 lg:px-16">
         <HeaderSection userName={userName} userEmail={userEmail} />
         <SetupSection />
+        <PhoneVerificationSection />
         <TutorialSection />
         <GroupsSection
           newGroupName={state.newGroupName}

@@ -3,6 +3,8 @@ export type UserRow = {
   clerk_user_id: string;
   email: string | null;
   name: string | null;
+  phone_number: string | null;
+  phone_verified_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -84,4 +86,14 @@ export type ModerationContext = {
   activeGroupId: string | null;
   settings: ModerationSettings | null;
   defaults: ModerationDefaults | null;
+};
+
+export type PhoneVerificationRow = {
+  id: string;
+  user_id: string;
+  phone_number: string;
+  otp_hash: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
 };
