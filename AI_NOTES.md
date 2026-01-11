@@ -20,7 +20,7 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - `app/dashboard/page.tsx` is a client component and uses `useAuth()` for redirect UX; keep it light.
 
 ## Sharp edges / gotchas
-- Server actions (`"use server"`) are imported into client components; do not move that logic into shared client files.
+- Server actions (`"use server"`) live in `src/actions/moderation` and are imported into client components; keep them thin.
 - Supabase RLS is not defined in migrations; the service role key bypasses RLS. This is powerful and dangerous.
 - Static marketing routes live under `app/(static)` and auth routes under `app/(auth)`.
 - Subscription fields exist in the database but there is no payment flow.
@@ -29,7 +29,8 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 
 ## Contribution rules for AI agents
 - Reason first: identify whether a change is server-only, client-only, or cross-boundary.
-- Keep server actions in `app/**/actions.ts` files with `"use server"`.
+- Keep server actions in `src/actions/moderation/*.actions.ts` with `"use server"`.
+- Put business logic in `src/services/moderation`, not in actions.
 - Avoid refactors that move server-only logic into client components.
 - Update `types/supabase.ts` whenever migrations change schema.
 - Add new migrations rather than editing existing SQL files.

@@ -1,0 +1,38 @@
+import type {
+  ModerationDefaults,
+  ModerationDefaultsRow,
+  ModerationGroup,
+  ModerationGroupRow,
+  ModerationSettings,
+  ModerationSettingsRow,
+} from "@/types/supabase";
+
+export const mapGroupRow = (row: ModerationGroupRow): ModerationGroup => ({
+  id: row.id,
+  userId: row.user_id,
+  groupLink: row.group_link,
+  groupName: row.group_name,
+  subscriptionPriceInr: row.subscription_price_inr,
+  subscriptionStatus: row.subscription_status,
+});
+
+export const mapSettingsRow = (
+  row: ModerationSettingsRow,
+): ModerationSettings => ({
+  userId: row.user_id,
+  groupId: row.group_id,
+  blockPhoneNumbers: row.block_phone_numbers,
+  blockLinks: row.block_links,
+  blockKeywords: row.block_keywords,
+  spamProtectionEnabled: row.spam_protection_enabled,
+  blockedKeywords: row.blocked_keywords ?? [],
+  adminPhoneNumbers: row.admin_phone_numbers ?? [],
+});
+
+export const mapDefaultsRow = (
+  row: ModerationDefaultsRow,
+): ModerationDefaults => ({
+  userId: row.user_id,
+  blockedKeywords: row.blocked_keywords ?? [],
+  adminPhoneNumbers: row.admin_phone_numbers ?? [],
+});

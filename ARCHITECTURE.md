@@ -14,9 +14,9 @@
 - Tailwind CSS for styling, Radix UI primitives in `components/ui`.
 
 **Backend (Server actions only)**
-- Business logic in `app/dashboard/actions.ts` (`"use server"`).
+- Server actions live in `src/actions/moderation/*.actions.ts` (`"use server"`).
+- Business logic and Supabase access live in `src/services/moderation`.
 - No custom API routes.
-- Server actions call Supabase directly using a service role key.
 
 **Auth**
 - Clerk for auth (provider in `app/providers.tsx`).
@@ -34,7 +34,7 @@ Browser
      -> middleware.ts (Clerk auth check for /dashboard)
         -> Page component
            -> Client components (Dashboard UI)
-              -> Server action call (app/dashboard/actions.ts)
+              -> Server action call (src/actions/moderation/*.actions.ts)
                  -> Supabase (service role key)
                     -> Result back to client
 ```
@@ -74,7 +74,6 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 ## Directory map (purpose + “do not”)
 **app/**
 - App Router routes, layouts, and server/client components.
-- Server actions live in route folders (e.g., `app/dashboard/actions.ts`).
 - NEVER import server-only modules (like `lib/supabase.ts`) into client components.
 
 **app/(static)/**
@@ -122,3 +121,13 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
   - `SUPABASE_SERVICE_ROLE_KEY` (secret, server-only)
 - Clerk env vars are required by the Clerk SDK but are not referenced in code:
   - UNKNOWN / NEEDS CONFIRMATION: exact env names and values for this project.
+**src/actions/**
+- Server actions only; thin orchestration wrappers around services.
+- NEVER put business logic directly in action files.
+
+**src/services/**
+- Business logic and Supabase queries.
+- Keep services domain-scoped (groups, settings, defaults).
+
+**src/lib/moderation/**
+- Normalization, validation, and mapping helpers.

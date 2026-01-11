@@ -12,7 +12,8 @@ Guidance for AI agents working on this repo. Keep changes minimal and aligned wi
 - `app/dashboard`: authenticated UI + server actions.
 
 ## Server/client boundaries
-- Server actions live in `app/**/actions.ts` and use `"use server"`.
+- Server actions live in `src/actions/moderation` and use `"use server"`.
+- Business logic + Supabase queries live in `src/services/moderation`.
 - `lib/supabase.ts` uses the service role key; never import it into client components.
 
 ## Data model rules

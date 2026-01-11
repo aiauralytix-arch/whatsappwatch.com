@@ -1,425 +1,51 @@
 "use client";
 
-import * as React from "react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import {
-  applyModerationDefaultsToGroups,
-  createModerationGroup,
-  deleteModerationGroup,
-  getModerationSettings,
-  updateModerationDefaults,
-  updateModerationSettings,
-} from "./actions";
-import type {
-  ModerationGroup,
-  ModerationDefaultsInput,
-  ModerationSettingsInput,
-} from "@/types/supabase";
+import HeaderSection from "@/app/dashboard/sections/header-section";
+import SetupSection from "@/app/dashboard/sections/setup-section";
+import TutorialSection from "@/app/dashboard/sections/tutorial-section";
+import GroupsSection from "@/app/dashboard/sections/groups-section";
+import SharedDefaultsSection from "@/app/dashboard/sections/shared-defaults-section";
+import ModerationTogglesSection from "@/app/dashboard/sections/moderation-toggles-section";
+import AdminAllowlistSection from "@/app/dashboard/sections/admin-allowlist-section";
+import KeywordSection from "@/app/dashboard/sections/keyword-section";
+import AnalyticsSection from "@/app/dashboard/sections/analytics-section";
+import FooterSection from "@/app/dashboard/sections/footer-section";
+import { useDashboardState } from "@/app/dashboard/hooks/use-dashboard-state";
+import { useGroupHandlers } from "@/app/dashboard/hooks/use-group-handlers";
+import { useSettingsHandlers } from "@/app/dashboard/hooks/use-settings-handlers";
+import { useDefaultsHandlers } from "@/app/dashboard/hooks/use-defaults-handlers";
 
 type DashboardClientProps = {
   userName: string;
   userEmail: string;
 };
 
-const fallbackKeywords = ["giveaway", "promo", "loan"];
-const defaultToggles = {
-  phoneNumbers: true,
-  links: true,
-  keywords: true,
-  spamProtection: false,
-};
-const normalizeKeywords = (input: string) =>
-  input
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-const normalizeAdminNumbers = (numbers: string[]) => {
-  const normalized = numbers
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .map((entry) => {
-      const cleaned = entry.replace(/[^\d+]/g, "");
-      if (!cleaned) return "";
-      return cleaned.startsWith("+")
-        ? `+${cleaned.slice(1).replace(/\+/g, "")}`
-        : cleaned.replace(/\+/g, "");
-    })
-    .filter(Boolean);
-  return Array.from(new Set(normalized));
-};
+export default function DashboardClient({ userName, userEmail }: DashboardClientProps) {
+  const { state, setters, canEdit, activeGroup, refreshContext } =
+    useDashboardState();
 
-export default function DashboardClient({
-  userName,
-  userEmail,
-}: DashboardClientProps) {
-  const [toggles, setToggles] = React.useState(defaultToggles);
-  const [keywordInput, setKeywordInput] = React.useState("");
-  const [keywords, setKeywords] = React.useState<string[]>(fallbackKeywords);
-  const [sharedKeywordInput, setSharedKeywordInput] = React.useState("");
-  const [sharedKeywords, setSharedKeywords] = React.useState<string[]>([]);
-  const [adminNumberInput, setAdminNumberInput] = React.useState("");
-  const [adminNumbers, setAdminNumbers] = React.useState<string[]>([]);
-  const [sharedAdminInput, setSharedAdminInput] = React.useState("");
-  const [sharedAdminNumbers, setSharedAdminNumbers] = React.useState<string[]>(
-    [],
-  );
-  const [isSyncing, setIsSyncing] = React.useState(false);
-  const [hasLoaded, setHasLoaded] = React.useState(false);
-  const [groups, setGroups] = React.useState<ModerationGroup[]>([]);
-  const [activeGroupId, setActiveGroupId] = React.useState<string | null>(null);
-  const [newGroupLink, setNewGroupLink] = React.useState("");
-  const [newGroupName, setNewGroupName] = React.useState("");
-  const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>([]);
-  const canEdit = hasLoaded && Boolean(activeGroupId);
-  const activeGroup =
-    groups.find((group) => group.id === activeGroupId) ?? null;
+  const groupHandlers = useGroupHandlers({
+    state,
+    setters,
+    hasLoaded: state.hasLoaded,
+    refreshContext,
+    activeGroupId: state.activeGroupId,
+  });
 
-  const syncGroupSelections = (nextGroups: ModerationGroup[]) => {
-    setSelectedGroupIds((prev) =>
-      prev.filter((id) => nextGroups.some((group) => group.id === id)),
-    );
-  };
+  const settingsHandlers = useSettingsHandlers({
+    state,
+    setters,
+    canEdit,
+    activeGroupId: state.activeGroupId,
+  });
 
-  React.useEffect(() => {
-    let isActive = true;
-
-    const loadSettings = async () => {
-      setIsSyncing(true);
-      try {
-        const data = await getModerationSettings();
-
-        if (isActive) {
-          setGroups(data.groups);
-          syncGroupSelections(data.groups);
-          setActiveGroupId(data.activeGroupId);
-          setSharedKeywords(data.defaults?.blockedKeywords ?? []);
-          setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
-          const nextFallbackKeywords =
-            data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
-              ? data.defaults.blockedKeywords
-              : fallbackKeywords;
-          const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
-          if (data.settings) {
-            setToggles({
-              phoneNumbers: data.settings.blockPhoneNumbers,
-              links: data.settings.blockLinks,
-              keywords: data.settings.blockKeywords,
-              spamProtection: data.settings.spamProtectionEnabled,
-            });
-            setKeywords(data.settings.blockedKeywords ?? []);
-            setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
-          } else {
-            setToggles(defaultToggles);
-            setKeywords(nextFallbackKeywords);
-            setAdminNumbers(nextFallbackAdmins);
-          }
-        }
-      } catch {
-        if (isActive) {
-          setToggles(defaultToggles);
-          setKeywords(fallbackKeywords);
-          setAdminNumbers([]);
-          setSharedKeywords([]);
-          setSharedAdminNumbers([]);
-          setGroups([]);
-          setActiveGroupId(null);
-        }
-      } finally {
-        if (isActive) {
-          setIsSyncing(false);
-          setHasLoaded(true);
-        }
-      }
-    };
-
-    void loadSettings();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  const persistSettings = React.useCallback(
-    async (input: ModerationSettingsInput) => {
-      if (!activeGroupId) return;
-      setIsSyncing(true);
-      try {
-        await updateModerationSettings(input, { groupId: activeGroupId });
-      } finally {
-        setIsSyncing(false);
-      }
-    },
-    [activeGroupId],
-  );
-
-  const handleToggle = (key: keyof typeof toggles) => (value: boolean) => {
-    if (!canEdit) return;
-    setToggles((prev) => ({ ...prev, [key]: value }));
-    const mapKey = {
-      phoneNumbers: "blockPhoneNumbers",
-      links: "blockLinks",
-      keywords: "blockKeywords",
-      spamProtection: "spamProtectionEnabled",
-    } as const;
-    void persistSettings({ [mapKey[key]]: value });
-  };
-
-  const addKeywords = () => {
-    if (!canEdit) return;
-    const next = normalizeKeywords(keywordInput);
-
-    if (next.length === 0) return;
-
-    const updated = Array.from(new Set([...keywords, ...next]));
-    setKeywords(updated);
-    setKeywordInput("");
-    void persistSettings({ blockedKeywords: updated });
-  };
-
-  const addAdminNumbers = () => {
-    if (!canEdit) return;
-    const next = normalizeAdminNumbers(adminNumberInput.split(","));
-    if (next.length === 0) return;
-    const updated = Array.from(new Set([...adminNumbers, ...next]));
-    setAdminNumbers(updated);
-    setAdminNumberInput("");
-    void persistSettings({ adminPhoneNumbers: updated });
-  };
-
-  const removeAdminNumber = (number: string) => {
-    if (!canEdit) return;
-    const updated = adminNumbers.filter((entry) => entry !== number);
-    setAdminNumbers(updated);
-    void persistSettings({ adminPhoneNumbers: updated });
-  };
-
-  const persistDefaults = React.useCallback(
-    async (input: ModerationDefaultsInput) => {
-      if (!hasLoaded) return;
-      setIsSyncing(true);
-      try {
-        const updated = await updateModerationDefaults(input);
-        setSharedKeywords(updated.blockedKeywords ?? []);
-        setSharedAdminNumbers(updated.adminPhoneNumbers ?? []);
-      } finally {
-        setIsSyncing(false);
-      }
-    },
-    [hasLoaded],
-  );
-
-  const addSharedKeywords = () => {
-    if (!hasLoaded) return;
-    const next = normalizeKeywords(sharedKeywordInput);
-    if (next.length === 0) return;
-    const updated = Array.from(new Set([...sharedKeywords, ...next]));
-    setSharedKeywords(updated);
-    setSharedKeywordInput("");
-    void persistDefaults({ blockedKeywords: updated });
-  };
-
-  const removeSharedKeyword = (keyword: string) => {
-    if (!hasLoaded) return;
-    const updated = sharedKeywords.filter((entry) => entry !== keyword);
-    setSharedKeywords(updated);
-    void persistDefaults({ blockedKeywords: updated });
-  };
-
-  const addSharedAdminNumbers = () => {
-    if (!hasLoaded) return;
-    const next = normalizeAdminNumbers(sharedAdminInput.split(","));
-    if (next.length === 0) return;
-    const updated = Array.from(new Set([...sharedAdminNumbers, ...next]));
-    setSharedAdminNumbers(updated);
-    setSharedAdminInput("");
-    void persistDefaults({ adminPhoneNumbers: updated });
-  };
-
-  const removeSharedAdminNumber = (number: string) => {
-    if (!hasLoaded) return;
-    const updated = sharedAdminNumbers.filter((entry) => entry !== number);
-    setSharedAdminNumbers(updated);
-    void persistDefaults({ adminPhoneNumbers: updated });
-  };
-
-  const toggleGroupSelection = (groupId: string) => {
-    setSelectedGroupIds((prev) =>
-      prev.includes(groupId)
-        ? prev.filter((id) => id !== groupId)
-        : [...prev, groupId],
-    );
-  };
-
-  const selectAllGroups = () => {
-    setSelectedGroupIds(groups.map((group) => group.id));
-  };
-
-  const clearSelectedGroups = () => {
-    setSelectedGroupIds([]);
-  };
-
-  const applyDefaultsToSelectedGroups = () => {
-    if (!hasLoaded || selectedGroupIds.length === 0) return;
-    setIsSyncing(true);
-    void applyModerationDefaultsToGroups(selectedGroupIds)
-      .then(() => getModerationSettings(activeGroupId ?? undefined))
-      .then((data) => {
-        setGroups(data.groups);
-        syncGroupSelections(data.groups);
-        setActiveGroupId(data.activeGroupId);
-        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
-        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
-        const nextFallbackKeywords =
-          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
-            ? data.defaults.blockedKeywords
-            : fallbackKeywords;
-        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
-        if (data.settings) {
-          setToggles({
-            phoneNumbers: data.settings.blockPhoneNumbers,
-            links: data.settings.blockLinks,
-            keywords: data.settings.blockKeywords,
-            spamProtection: data.settings.spamProtectionEnabled,
-          });
-          setKeywords(data.settings.blockedKeywords ?? []);
-          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
-        } else {
-          setToggles(defaultToggles);
-          setKeywords(nextFallbackKeywords);
-          setAdminNumbers(nextFallbackAdmins);
-        }
-      })
-      .finally(() => {
-        setIsSyncing(false);
-      });
-  };
-
-  const handleAddGroup = () => {
-    if (!hasLoaded) return;
-    const trimmed = newGroupLink.trim();
-    if (!trimmed) return;
-    setIsSyncing(true);
-    void createModerationGroup(trimmed, newGroupName)
-      .then((group) => getModerationSettings(group.id))
-      .then((data) => {
-        setGroups(data.groups);
-        syncGroupSelections(data.groups);
-        setActiveGroupId(data.activeGroupId);
-        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
-        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
-        setNewGroupLink("");
-        setNewGroupName("");
-        const nextFallbackKeywords =
-          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
-            ? data.defaults.blockedKeywords
-            : fallbackKeywords;
-        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
-        if (data.settings) {
-          setToggles({
-            phoneNumbers: data.settings.blockPhoneNumbers,
-            links: data.settings.blockLinks,
-            keywords: data.settings.blockKeywords,
-            spamProtection: data.settings.spamProtectionEnabled,
-          });
-          setKeywords(data.settings.blockedKeywords ?? []);
-          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
-        } else {
-          setToggles(defaultToggles);
-          setKeywords(nextFallbackKeywords);
-          setAdminNumbers(nextFallbackAdmins);
-        }
-      })
-      .finally(() => {
-        setIsSyncing(false);
-      });
-  };
-
-  const handleSelectGroup = (groupId: string) => {
-    if (groupId === activeGroupId) return;
-    setIsSyncing(true);
-    void getModerationSettings(groupId)
-      .then((data) => {
-        setGroups(data.groups);
-        syncGroupSelections(data.groups);
-        setActiveGroupId(data.activeGroupId);
-        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
-        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
-        const nextFallbackKeywords =
-          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
-            ? data.defaults.blockedKeywords
-            : fallbackKeywords;
-        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
-        if (data.settings) {
-          setToggles({
-            phoneNumbers: data.settings.blockPhoneNumbers,
-            links: data.settings.blockLinks,
-            keywords: data.settings.blockKeywords,
-            spamProtection: data.settings.spamProtectionEnabled,
-          });
-          setKeywords(data.settings.blockedKeywords ?? []);
-          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
-        } else {
-          setToggles(defaultToggles);
-          setKeywords(nextFallbackKeywords);
-          setAdminNumbers(nextFallbackAdmins);
-        }
-      })
-      .finally(() => {
-        setIsSyncing(false);
-      });
-  };
-
-  const handleDeleteGroup = () => {
-    if (!activeGroupId) return;
-    if (!window.confirm("Delete this group and its settings?")) {
-      return;
-    }
-    setIsSyncing(true);
-    void deleteModerationGroup(activeGroupId)
-      .then(() => getModerationSettings())
-      .then((data) => {
-        setGroups(data.groups);
-        syncGroupSelections(data.groups);
-        setActiveGroupId(data.activeGroupId);
-        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
-        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
-        const nextFallbackKeywords =
-          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
-            ? data.defaults.blockedKeywords
-            : fallbackKeywords;
-        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
-        if (data.settings) {
-          setToggles({
-            phoneNumbers: data.settings.blockPhoneNumbers,
-            links: data.settings.blockLinks,
-            keywords: data.settings.blockKeywords,
-            spamProtection: data.settings.spamProtectionEnabled,
-          });
-          setKeywords(data.settings.blockedKeywords ?? []);
-          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
-        } else {
-          setToggles(defaultToggles);
-          setKeywords(nextFallbackKeywords);
-          setAdminNumbers(nextFallbackAdmins);
-        }
-      })
-      .finally(() => {
-        setIsSyncing(false);
-      });
-  };
+  const defaultsHandlers = useDefaultsHandlers({
+    state,
+    setters,
+    hasLoaded: state.hasLoaded,
+    refreshContext,
+    activeGroupId: state.activeGroupId,
+  });
 
   return (
     <div className="min-h-screen bg-[#f6f3ee] text-[#161616]">
@@ -430,581 +56,70 @@ export default function DashboardClient({
       </div>
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-24 pt-16 sm:px-10 lg:px-16">
-        <section className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-[#6b6b6b]">
-                Admin Control Panel
-              </p>
-              <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">
-                WhatsApp Moderation Dashboard
-              </h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-[#4b4b4b]">
-                Control how messages are moderated across your WhatsApp groups.
-              </p>
-            </div>
-            <Card className="w-full max-w-sm bg-[#fefcf9] p-6 sm:w-auto">
-              <CardHeader className="pb-4">
-                <CardDescription>Signed in as</CardDescription>
-                <CardTitle className="text-lg">{userName}</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-[#6b6b6b]">{userEmail}</p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>Setup Instructions</CardTitle>
-              <CardDescription>
-                Follow this guided flow to activate moderation in minutes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-4 text-sm text-[#4b4b4b]">
-                  <div className="flex gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
-                      Step 1
-                    </span>
-                    <span>Add your WhatsApp group invite link and subscribe.</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
-                      Step 2
-                    </span>
-                    <span>Select the group you want to moderate.</span>
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a948b]">
-                      Step 3
-                    </span>
-                    <span>Enable moderation toggles below.</span>
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-[#e2dad0] bg-white p-5 text-sm">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
-                    Sample details
-                  </p>
-                  <p className="mt-3 text-lg font-semibold text-[#161616]">
-                    +1 (415) 555-0123
-                  </p>
-                  <p className="mt-2 text-[#4b4b4b]">
-                    Group: <span className="font-medium">Community Alpha</span>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>
-                Watch: How to set up WhatsApp moderation in 2 minutes
-              </CardTitle>
-              <CardDescription>
-                A short walkthrough to get your group protected quickly.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="aspect-video w-full overflow-hidden rounded-3xl border border-[#e2dad0] bg-[#efe9df]">
-                <iframe
-                  className="h-full w-full"
-                  src="https://www.youtube.com/embed/ysz5S6PUM-U"
-                  title="WhatsApp moderation tutorial"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>Groups</CardTitle>
-              <CardDescription>
-                Add up to 50 groups. Select a group to edit its moderation
-                settings. Subscription is Rs 299 per group.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col gap-3">
-                <Input
-                  placeholder="Group name (optional)"
-                  value={newGroupName}
-                  onChange={(event) => setNewGroupName(event.target.value)}
-                  maxLength={80}
-                  disabled={!hasLoaded || isSyncing}
-                />
-                <Input
-                  placeholder="https://chat.whatsapp.com/your-invite-link"
-                  value={newGroupLink}
-                  onChange={(event) => setNewGroupLink(event.target.value)}
-                  maxLength={512}
-                  disabled={!hasLoaded || isSyncing}
-                />
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button
-                  variant="outline"
-                  className="whitespace-nowrap"
-                  onClick={handleAddGroup}
-                  disabled={
-                    !hasLoaded ||
-                    isSyncing ||
-                    groups.length >= 50 ||
-                    newGroupLink.trim().length === 0
-                  }
-                >
-                  Add Group
-                </Button>
-              </div>
-              <p className="text-sm text-[#6b6b6b]">
-                {groups.length}/50 groups added.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {groups.length === 0 ? (
-                  <p className="text-sm text-[#6b6b6b]">
-                    No groups yet. Add a WhatsApp invite link to begin.
-                  </p>
-                ) : (
-                  groups.map((group) => (
-                    <Button
-                      key={group.id}
-                      size="sm"
-                      variant={
-                        group.id === activeGroupId ? "default" : "outline"
-                      }
-                      onClick={() => handleSelectGroup(group.id)}
-                      disabled={isSyncing}
-                      title={group.groupName ?? group.groupLink ?? "Untitled group"}
-                      className="max-w-[260px] truncate"
-                    >
-                      {group.groupName ?? group.groupLink ?? "Untitled group"}
-                    </Button>
-                  ))
-                )}
-              </div>
-              {activeGroup ? (
-                <div className="rounded-2xl border border-[#e2dad0] bg-white p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
-                    Active group
-                  </p>
-                  <p className="mt-2 text-sm text-[#161616]">
-                    {activeGroup.groupName ??
-                      activeGroup.groupLink ??
-                      "Untitled group"}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge variant="soft">
-                      Rs {activeGroup.subscriptionPriceInr}
-                    </Badge>
-                    <Badge
-                      variant={
-                        activeGroup.subscriptionStatus === "active"
-                          ? "dark"
-                          : "default"
-                      }
-                    >
-                      {activeGroup.subscriptionStatus}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-xs text-[#6b6b6b]">
-                    Payments coming soon.
-                  </p>
-                  <div className="mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDeleteGroup}
-                      disabled={!activeGroupId || isSyncing}
-                      className="border-[#b23a2b] text-[#b23a2b] hover:bg-[#b23a2b] hover:text-[#f6f3ee]"
-                    >
-                      Delete group
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </section>
-
-        {hasLoaded && groups.length > 1 ? (
-          <section>
-            <Card className="bg-[#fefcf9]">
-              <CardHeader>
-                <CardTitle>Shared Defaults</CardTitle>
-                <CardDescription>
-                  Maintain shared admin numbers and keywords for new groups, then
-                  apply them to existing groups in bulk.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label className="text-base">Default admin allowlist</Label>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <Input
-                        placeholder="Add default admin numbers (comma separated)"
-                        value={sharedAdminInput}
-                        onChange={(event) =>
-                          setSharedAdminInput(event.target.value)
-                        }
-                        disabled={!hasLoaded || isSyncing}
-                      />
-                      <Button
-                        variant="outline"
-                        className="whitespace-nowrap"
-                        onClick={addSharedAdminNumbers}
-                        disabled={!hasLoaded || isSyncing}
-                      >
-                        Save Admins
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {sharedAdminNumbers.length === 0 ? (
-                        <p className="text-sm text-[#6b6b6b]">
-                          No default admin numbers yet.
-                        </p>
-                      ) : (
-                        sharedAdminNumbers.map((number) => (
-                          <Badge
-                            key={number}
-                            variant="soft"
-                            className="gap-2 pr-1"
-                          >
-                            <span>{number}</span>
-                            <button
-                              type="button"
-                              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9]  font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
-                              onClick={() => removeSharedAdminNumber(number)}
-                              aria-label="Remove default admin number"
-                              disabled={isSyncing}
-                            >
-                              x
-                            </button>
-                          </Badge>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-base">Default keyword blocklist</Label>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <Input
-                        placeholder="Add default keywords (comma separated)"
-                        value={sharedKeywordInput}
-                        onChange={(event) =>
-                          setSharedKeywordInput(event.target.value)
-                        }
-                        disabled={!hasLoaded || isSyncing}
-                      />
-                      <Button
-                        variant="outline"
-                        className="whitespace-nowrap"
-                        onClick={addSharedKeywords}
-                        disabled={!hasLoaded || isSyncing}
-                      >
-                        Save Keywords
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {sharedKeywords.length === 0 ? (
-                        <p className="text-sm text-[#6b6b6b]">
-                          No default keywords yet.
-                        </p>
-                      ) : (
-                        sharedKeywords.map((keyword) => (
-                          <Badge
-                            key={keyword}
-                            variant="soft"
-                            className="gap-2 pr-1"
-                          >
-                            <span>{keyword}</span>
-                            <button
-                              type="button"
-                              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9] text-[10px] font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
-                              onClick={() => removeSharedKeyword(keyword)}
-                              aria-label="Remove default keyword"
-                              disabled={isSyncing}
-                            >
-                              x
-                            </button>
-                          </Badge>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-[#e2dad0] bg-white p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
-                    Apply defaults to existing groups
-                  </p>
-                  <p className="mt-2 text-sm text-[#6b6b6b]">
-                    Select groups below. Defaults are merged with each group and
-                    do not change toggle settings.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {groups.length === 0 ? (
-                      <p className="text-sm text-[#6b6b6b]">
-                        Add a group to enable bulk updates.
-                      </p>
-                    ) : (
-                      groups.map((group) => {
-                        const isSelected = selectedGroupIds.includes(group.id);
-                        return (
-                          <Button
-                            key={group.id}
-                            size="sm"
-                            variant={isSelected ? "default" : "outline"}
-                            onClick={() => toggleGroupSelection(group.id)}
-                            disabled={isSyncing}
-                            title={
-                              group.groupName ??
-                              group.groupLink ??
-                              "Untitled group"
-                            }
-                            className="max-w-[260px] truncate"
-                          >
-                            {group.groupName ??
-                              group.groupLink ??
-                              "Untitled group"}
-                          </Button>
-                        );
-                      })
-                    )}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={selectAllGroups}
-                      disabled={groups.length === 0 || isSyncing}
-                    >
-                      Select all
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={clearSelectedGroups}
-                      disabled={selectedGroupIds.length === 0 || isSyncing}
-                    >
-                      Clear selection
-                    </Button>
-                    <Button
-                      onClick={applyDefaultsToSelectedGroups}
-                      disabled={
-                        selectedGroupIds.length === 0 ||
-                        isSyncing ||
-                        sharedAdminNumbers.length + sharedKeywords.length === 0
-                      }
-                    >
-                      Apply defaults to {selectedGroupIds.length} group
-                      {selectedGroupIds.length === 1 ? "" : "s"}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+        <HeaderSection userName={userName} userEmail={userEmail} />
+        <SetupSection />
+        <TutorialSection />
+        <GroupsSection
+          newGroupName={state.newGroupName}
+          newGroupLink={state.newGroupLink}
+          onGroupNameChange={setters.setNewGroupName}
+          onGroupLinkChange={setters.setNewGroupLink}
+          onAddGroup={groupHandlers.handleAddGroup}
+          onSelectGroup={groupHandlers.handleSelectGroup}
+          onDeleteGroup={groupHandlers.handleDeleteGroup}
+          hasLoaded={state.hasLoaded}
+          isSyncing={state.isSyncing}
+          groups={state.groups}
+          activeGroupId={state.activeGroupId}
+          activeGroup={activeGroup}
+        />
+        {state.hasLoaded && state.groups.length > 1 ? (
+          <SharedDefaultsSection
+            hasLoaded={state.hasLoaded}
+            isSyncing={state.isSyncing}
+            groups={state.groups}
+            selectedGroupIds={state.selectedGroupIds}
+            sharedAdminInput={state.sharedAdminInput}
+            sharedAdminNumbers={state.sharedAdminNumbers}
+            sharedKeywordInput={state.sharedKeywordInput}
+            sharedKeywords={state.sharedKeywords}
+            onSharedAdminInputChange={setters.setSharedAdminInput}
+            onSharedKeywordInputChange={setters.setSharedKeywordInput}
+            onAddSharedAdmins={defaultsHandlers.addSharedAdminNumbers}
+            onAddSharedKeywords={defaultsHandlers.addSharedKeywords}
+            onRemoveSharedAdmin={defaultsHandlers.removeSharedAdminNumber}
+            onRemoveSharedKeyword={defaultsHandlers.removeSharedKeyword}
+            onToggleGroupSelection={defaultsHandlers.toggleGroupSelection}
+            onSelectAllGroups={defaultsHandlers.selectAllGroups}
+            onClearSelectedGroups={defaultsHandlers.clearSelectedGroups}
+            onApplyDefaults={defaultsHandlers.applyDefaultsToSelectedGroups}
+          />
         ) : null}
-
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>Moderation Toggles</CardTitle>
-              <CardDescription>
-                Enable the protections you want applied to every message.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {[
-                {
-                  id: "phoneNumbers",
-                  label: "Delete messages containing phone numbers",
-                  description:
-                    "Remove posts that share phone numbers or contact details.",
-                },
-                {
-                  id: "links",
-                  label: "Delete messages containing links (http / https / www)",
-                  description:
-                    "Block outbound links and keep the group focused.",
-                },
-                {
-                  id: "keywords",
-                  label: "Delete messages containing configured keywords",
-                  description:
-                    "Auto-remove content that matches your blocked list.",
-                },
-                {
-                  id: "spamProtection",
-                  label: "Enable spam protection",
-                  description:
-                    "Use pattern detection to catch repeat offenders.",
-                },
-              ].map((item) => (
-                <div key={item.id} className="space-y-3">
-                  <div className="flex items-center justify-between gap-6">
-                    <Label className="text-base">{item.label}</Label>
-                    <Switch
-                      checked={
-                        canEdit
-                          ? toggles[item.id as keyof typeof toggles]
-                          : false
-                      }
-                      disabled={!canEdit || isSyncing}
-                      onCheckedChange={handleToggle(
-                        item.id as keyof typeof toggles,
-                      )}
-                    />
-                  </div>
-                  <p className="text-sm text-[#6b6b6b]">{item.description}</p>
-                  <Separator />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </section>
-
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>Admin Allowlist</CardTitle>
-              <CardDescription>
-                Messages from these numbers will never be auto-deleted.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Input
-                  placeholder="Add admin numbers (comma separated, include country code)"
-                  value={adminNumberInput}
-                  onChange={(event) => setAdminNumberInput(event.target.value)}
-                  disabled={!canEdit || isSyncing}
-                />
-                <Button
-                  variant="outline"
-                  className="whitespace-nowrap"
-                  onClick={addAdminNumbers}
-                  disabled={!canEdit || isSyncing}
-                >
-                  Add Admins
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {adminNumbers.length === 0 ? (
-                  <p className="text-sm text-[#6b6b6b]">
-                    No admin numbers added yet.
-                  </p>
-                ) : (
-                  adminNumbers.map((number) => (
-                    <Badge
-                      key={number}
-                      variant="soft"
-                      className="gap-2 pr-1"
-                    >
-                      <span>{number}</span>
-                      <button
-                        type="button"
-                        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9] text-[10px] font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
-                        onClick={() => removeAdminNumber(number)}
-                        aria-label="Remove admin number"
-                        disabled={!canEdit || isSyncing}
-                      >
-                        x
-                      </button>
-                    </Badge>
-                  ))
-                )}
-              </div>
-              <p className="text-sm text-[#6b6b6b]">
-                Use full numbers with country codes for reliable matching.
-              </p>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>Keyword Configuration</CardTitle>
-              <CardDescription>
-                Add terms that should be auto-deleted from the group.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Input
-                  placeholder="Add blocked keywords (comma separated)"
-                  value={keywordInput}
-                  onChange={(event) => setKeywordInput(event.target.value)}
-                  disabled={!canEdit || isSyncing}
-                />
-                <Button
-                  variant="outline"
-                  className="whitespace-nowrap"
-                  onClick={addKeywords}
-                  disabled={!canEdit || isSyncing}
-                >
-                  Add Keywords
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {keywords.map((keyword) => (
-                  <Badge key={keyword} variant="soft">
-                    {keyword}
-                  </Badge>
-                ))}
-              </div>
-              <p className="text-sm text-[#6b6b6b]">
-                Messages containing these words will be auto-deleted.
-              </p>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section>
-          <Card className="bg-[#fefcf9]">
-            <CardHeader>
-              <CardTitle>Analytics Overview</CardTitle>
-              <CardDescription>
-                A quick readout of moderation activity today.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { label: "Messages scanned today", value: "2,184" },
-                { label: "Messages deleted", value: "128" },
-                { label: "Spam messages detected", value: "46" },
-                { label: "Most common spam type", value: "Promo links" },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-[#e2dad0] bg-white px-5 py-4"
-                >
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
-                    {stat.label}
-                  </p>
-                  <p className="mt-3 text-xl font-semibold text-[#161616]">
-                    {stat.value}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </section>
-
-        <footer className="text-center text-xs uppercase tracking-[0.2em] text-[#9a948b]">
-          {isSyncing
-            ? "Syncing changes..."
-            : "Moderation actions are automated. Review WhatsApp policies."}
-        </footer>
+        <ModerationTogglesSection
+          toggles={state.toggles}
+          canEdit={canEdit}
+          isSyncing={state.isSyncing}
+          onToggle={settingsHandlers.handleToggle}
+        />
+        <AdminAllowlistSection
+          adminNumberInput={state.adminNumberInput}
+          adminNumbers={state.adminNumbers}
+          canEdit={canEdit}
+          isSyncing={state.isSyncing}
+          onAdminInputChange={setters.setAdminNumberInput}
+          onAddAdminNumbers={settingsHandlers.addAdminNumbers}
+          onRemoveAdminNumber={settingsHandlers.removeAdminNumber}
+        />
+        <KeywordSection
+          keywordInput={state.keywordInput}
+          keywords={state.keywords}
+          canEdit={canEdit}
+          isSyncing={state.isSyncing}
+          onKeywordInputChange={setters.setKeywordInput}
+          onAddKeywords={settingsHandlers.addKeywords}
+        />
+        <AnalyticsSection />
+        <FooterSection isSyncing={state.isSyncing} />
       </main>
     </div>
   );
