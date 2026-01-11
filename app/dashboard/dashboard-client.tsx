@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   applyModerationDefaultsToGroups,
   createModerationGroup,
+  deleteModerationGroup,
   getModerationSettings,
   updateModerationDefaults,
   updateModerationSettings,
@@ -86,6 +87,12 @@ export default function DashboardClient({
   const activeGroup =
     groups.find((group) => group.id === activeGroupId) ?? null;
 
+  const syncGroupSelections = (nextGroups: ModerationGroup[]) => {
+    setSelectedGroupIds((prev) =>
+      prev.filter((id) => nextGroups.some((group) => group.id === id)),
+    );
+  };
+
   React.useEffect(() => {
     let isActive = true;
 
@@ -96,6 +103,7 @@ export default function DashboardClient({
 
         if (isActive) {
           setGroups(data.groups);
+          syncGroupSelections(data.groups);
           setActiveGroupId(data.activeGroupId);
           setSharedKeywords(data.defaults?.blockedKeywords ?? []);
           setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
@@ -191,6 +199,13 @@ export default function DashboardClient({
     void persistSettings({ adminPhoneNumbers: updated });
   };
 
+  const removeAdminNumber = (number: string) => {
+    if (!canEdit) return;
+    const updated = adminNumbers.filter((entry) => entry !== number);
+    setAdminNumbers(updated);
+    void persistSettings({ adminPhoneNumbers: updated });
+  };
+
   const persistDefaults = React.useCallback(
     async (input: ModerationDefaultsInput) => {
       if (!hasLoaded) return;
@@ -216,6 +231,13 @@ export default function DashboardClient({
     void persistDefaults({ blockedKeywords: updated });
   };
 
+  const removeSharedKeyword = (keyword: string) => {
+    if (!hasLoaded) return;
+    const updated = sharedKeywords.filter((entry) => entry !== keyword);
+    setSharedKeywords(updated);
+    void persistDefaults({ blockedKeywords: updated });
+  };
+
   const addSharedAdminNumbers = () => {
     if (!hasLoaded) return;
     const next = normalizeAdminNumbers(sharedAdminInput.split(","));
@@ -223,6 +245,13 @@ export default function DashboardClient({
     const updated = Array.from(new Set([...sharedAdminNumbers, ...next]));
     setSharedAdminNumbers(updated);
     setSharedAdminInput("");
+    void persistDefaults({ adminPhoneNumbers: updated });
+  };
+
+  const removeSharedAdminNumber = (number: string) => {
+    if (!hasLoaded) return;
+    const updated = sharedAdminNumbers.filter((entry) => entry !== number);
+    setSharedAdminNumbers(updated);
     void persistDefaults({ adminPhoneNumbers: updated });
   };
 
@@ -249,6 +278,7 @@ export default function DashboardClient({
       .then(() => getModerationSettings(activeGroupId ?? undefined))
       .then((data) => {
         setGroups(data.groups);
+        syncGroupSelections(data.groups);
         setActiveGroupId(data.activeGroupId);
         setSharedKeywords(data.defaults?.blockedKeywords ?? []);
         setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
@@ -286,6 +316,7 @@ export default function DashboardClient({
       .then((group) => getModerationSettings(group.id))
       .then((data) => {
         setGroups(data.groups);
+        syncGroupSelections(data.groups);
         setActiveGroupId(data.activeGroupId);
         setSharedKeywords(data.defaults?.blockedKeywords ?? []);
         setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
@@ -322,6 +353,46 @@ export default function DashboardClient({
     void getModerationSettings(groupId)
       .then((data) => {
         setGroups(data.groups);
+        syncGroupSelections(data.groups);
+        setActiveGroupId(data.activeGroupId);
+        setSharedKeywords(data.defaults?.blockedKeywords ?? []);
+        setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
+        const nextFallbackKeywords =
+          data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
+            ? data.defaults.blockedKeywords
+            : fallbackKeywords;
+        const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
+        if (data.settings) {
+          setToggles({
+            phoneNumbers: data.settings.blockPhoneNumbers,
+            links: data.settings.blockLinks,
+            keywords: data.settings.blockKeywords,
+            spamProtection: data.settings.spamProtectionEnabled,
+          });
+          setKeywords(data.settings.blockedKeywords ?? []);
+          setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
+        } else {
+          setToggles(defaultToggles);
+          setKeywords(nextFallbackKeywords);
+          setAdminNumbers(nextFallbackAdmins);
+        }
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
+  };
+
+  const handleDeleteGroup = () => {
+    if (!activeGroupId) return;
+    if (!window.confirm("Delete this group and its settings?")) {
+      return;
+    }
+    setIsSyncing(true);
+    void deleteModerationGroup(activeGroupId)
+      .then(() => getModerationSettings())
+      .then((data) => {
+        setGroups(data.groups);
+        syncGroupSelections(data.groups);
         setActiveGroupId(data.activeGroupId);
         setSharedKeywords(data.defaults?.blockedKeywords ?? []);
         setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
@@ -548,6 +619,17 @@ export default function DashboardClient({
                   <p className="mt-2 text-xs text-[#6b6b6b]">
                     Payments coming soon.
                   </p>
+                  <div className="mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteGroup}
+                      disabled={!activeGroupId || isSyncing}
+                      className="border-[#b23a2b] text-[#b23a2b] hover:bg-[#b23a2b] hover:text-[#f6f3ee]"
+                    >
+                      Delete group
+                    </Button>
+                  </div>
                 </div>
               ) : null}
             </CardContent>
@@ -593,8 +675,21 @@ export default function DashboardClient({
                         </p>
                       ) : (
                         sharedAdminNumbers.map((number) => (
-                          <Badge key={number} variant="soft">
-                            {number}
+                          <Badge
+                            key={number}
+                            variant="soft"
+                            className="gap-2 pr-1"
+                          >
+                            <span>{number}</span>
+                            <button
+                              type="button"
+                              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9]  font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
+                              onClick={() => removeSharedAdminNumber(number)}
+                              aria-label="Remove default admin number"
+                              disabled={isSyncing}
+                            >
+                              x
+                            </button>
                           </Badge>
                         ))
                       )}
@@ -627,8 +722,21 @@ export default function DashboardClient({
                         </p>
                       ) : (
                         sharedKeywords.map((keyword) => (
-                          <Badge key={keyword} variant="soft">
-                            {keyword}
+                          <Badge
+                            key={keyword}
+                            variant="soft"
+                            className="gap-2 pr-1"
+                          >
+                            <span>{keyword}</span>
+                            <button
+                              type="button"
+                              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9] text-[10px] font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
+                              onClick={() => removeSharedKeyword(keyword)}
+                              aria-label="Remove default keyword"
+                              disabled={isSyncing}
+                            >
+                              x
+                            </button>
                           </Badge>
                         ))
                       )}
@@ -796,8 +904,21 @@ export default function DashboardClient({
                   </p>
                 ) : (
                   adminNumbers.map((number) => (
-                    <Badge key={number} variant="soft">
-                      {number}
+                    <Badge
+                      key={number}
+                      variant="soft"
+                      className="gap-2 pr-1"
+                    >
+                      <span>{number}</span>
+                      <button
+                        type="button"
+                        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9] text-[10px] font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
+                        onClick={() => removeAdminNumber(number)}
+                        aria-label="Remove admin number"
+                        disabled={!canEdit || isSyncing}
+                      >
+                        x
+                      </button>
                     </Badge>
                   ))
                 )}

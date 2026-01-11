@@ -450,6 +450,34 @@ export async function applyModerationDefaultsToGroups(
   return { updatedGroupIds: allowedGroupIds };
 }
 
+export async function deleteModerationGroup(groupId: string): Promise<void> {
+  const user = await currentUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  if (!groupId) {
+    throw new Error("Group is required.");
+  }
+
+  const group = await getGroupForUser(user.id, groupId);
+
+  if (!group) {
+    throw new Error("Group not found.");
+  }
+
+  const { error } = await supabase
+    .from("moderation_groups")
+    .delete()
+    .eq("id", groupId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    throw new Error("Failed to delete group.");
+  }
+}
+
 export async function updateModerationSettings(
   input: ModerationSettingsInput,
   options?: { groupId?: string },
