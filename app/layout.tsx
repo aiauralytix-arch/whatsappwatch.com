@@ -4,9 +4,26 @@ import Providers from "./providers"
 
 export const dynamic = "force-dynamic"
 
+const baseTitle = "WhatsApp Watch";
+const baseDescription =
+  "Quiet, automated moderation for WhatsApp groups.";
+
 export const metadata: Metadata = {
-  title: "Axiom Form",
-  description: "Modern operational systems",
+  metadataBase: new URL("https://whatsappwatch.com"),
+  title: baseTitle,
+  description: baseDescription,
+  openGraph: {
+    title: baseTitle,
+    description: baseDescription,
+    url: "/",
+    siteName: "WhatsApp Watch",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: baseTitle,
+    description: baseDescription,
+  },
 }
 
 export default function RootLayout({
