@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 const baseTitle = "WhatsApp Watch";
 const baseDescription =
-  "Quiet, automated moderation for WhatsApp groups.";
+  "Quiet and automated moderation for WhatsApp groups.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://whatsappwatch.com"),
