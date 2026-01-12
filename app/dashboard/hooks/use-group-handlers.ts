@@ -83,6 +83,7 @@ export const useGroupHandlers = ({
       setters.setIsSyncing(true);
       return verifyModerationGroup(groupId, whapiGroupId)
         .then((group) => refreshContext(group.id))
+        .then(() => undefined)
         .finally(() => {
           setters.setIsSyncing(false);
         });

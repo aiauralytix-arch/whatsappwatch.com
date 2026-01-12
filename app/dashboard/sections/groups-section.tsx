@@ -206,7 +206,7 @@ export default function GroupsSection({
         })
         .filter(
           (entry): entry is NonNullable<typeof entry> =>
-            Boolean(entry) &&
+            entry !== null &&
             entry.hasUserAdmin &&
             entry.hasHelperAdmin &&
             entry.similarity >= NAME_MATCH_THRESHOLD,
