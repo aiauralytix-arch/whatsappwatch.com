@@ -7,7 +7,7 @@ type SharedDefaultsGroupsProps = {
   groups: ModerationGroup[];
   selectedGroupIds: string[];
   isSyncing: boolean;
-  sharedAdminCount: number;
+  sharedAllowlistCount: number;
   sharedKeywordCount: number;
   onToggleGroupSelection: (groupId: string) => void;
   onSelectAllGroups: () => void;
@@ -19,7 +19,7 @@ export default function SharedDefaultsGroups({
   groups,
   selectedGroupIds,
   isSyncing,
-  sharedAdminCount,
+  sharedAllowlistCount,
   sharedKeywordCount,
   onToggleGroupSelection,
   onSelectAllGroups,
@@ -79,7 +79,7 @@ export default function SharedDefaultsGroups({
           disabled={
             selectedGroupIds.length === 0 ||
             isSyncing ||
-            sharedAdminCount + sharedKeywordCount === 0
+            sharedAllowlistCount + sharedKeywordCount === 0
           }
         >
           Apply defaults to {selectedGroupIds.length} group

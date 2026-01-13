@@ -17,7 +17,7 @@ import {
 } from "@/src/lib/moderation/settings-constants";
 
 const defaultsSelect =
-  "id, user_id, blocked_keywords, admin_phone_numbers, created_at, updated_at";
+  "id, user_id, blocked_keywords, allowlist_phone_numbers, created_at, updated_at";
 
 export const getDefaultsForUser = async (userId: string) => {
   const { data, error } = await supabase
@@ -39,12 +39,15 @@ export const updateModerationDefaults = async (
 ): Promise<ModerationDefaults> => {
   const current = await getDefaultsForUser(userId);
   const sanitizedKeywords = normalizeKeywords(input.blockedKeywords);
-  const sanitizedAdminNumbers = normalizePhoneNumbers(input.adminPhoneNumbers);
+  const sanitizedAllowlistNumbers = normalizePhoneNumbers(
+    input.allowlistPhoneNumbers,
+  );
 
   const next: ModerationDefaults = {
     userId,
     blockedKeywords: sanitizedKeywords ?? current?.blockedKeywords ?? [],
-    adminPhoneNumbers: sanitizedAdminNumbers ?? current?.adminPhoneNumbers ?? [],
+    allowlistPhoneNumbers:
+      sanitizedAllowlistNumbers ?? current?.allowlistPhoneNumbers ?? [],
   };
 
   const { data, error } = await supabase
@@ -53,7 +56,7 @@ export const updateModerationDefaults = async (
       {
         user_id: userId,
         blocked_keywords: next.blockedKeywords,
-        admin_phone_numbers: next.adminPhoneNumbers,
+        allowlist_phone_numbers: next.allowlistPhoneNumbers,
       },
       { onConflict: "user_id" },
     )
@@ -83,7 +86,7 @@ export const applyDefaultsToGroups = async (
   requireDefaultsConfigured(
     Boolean(
       defaults &&
-        (defaults.adminPhoneNumbers.length > 0 ||
+        (defaults.allowlistPhoneNumbers.length > 0 ||
           defaults.blockedKeywords.length > 0),
     ),
   );
@@ -121,7 +124,7 @@ export const applyDefaultsToGroups = async (
   const updates = allowedGroupIds.map((groupId) => {
     const current = settingsByGroup.get(groupId) as ModerationSettingsRow | null;
     const currentKeywords = current?.blocked_keywords ?? [];
-    const currentAdmins = current?.admin_phone_numbers ?? [];
+    const currentAllowlist = current?.allowlist_phone_numbers ?? [];
 
     return {
       user_id: userId,
@@ -137,9 +140,9 @@ export const applyDefaultsToGroups = async (
         currentKeywords,
         defaults?.blockedKeywords ?? [],
       ),
-      admin_phone_numbers: mergeUnique(
-        currentAdmins,
-        defaults?.adminPhoneNumbers ?? [],
+      allowlist_phone_numbers: mergeUnique(
+        currentAllowlist,
+        defaults?.allowlistPhoneNumbers ?? [],
       ),
     };
   });

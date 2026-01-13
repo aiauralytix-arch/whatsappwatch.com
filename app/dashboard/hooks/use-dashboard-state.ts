@@ -21,12 +21,12 @@ export const useDashboardState = () => {
   const [keywords, setKeywords] = React.useState<string[]>(fallbackKeywords);
   const [sharedKeywordInput, setSharedKeywordInput] = React.useState("");
   const [sharedKeywords, setSharedKeywords] = React.useState<string[]>([]);
-  const [adminNumberInput, setAdminNumberInput] = React.useState("");
-  const [adminNumbers, setAdminNumbers] = React.useState<string[]>([]);
-  const [sharedAdminInput, setSharedAdminInput] = React.useState("");
-  const [sharedAdminNumbers, setSharedAdminNumbers] = React.useState<string[]>(
-    [],
-  );
+  const [allowlistNumberInput, setAllowlistNumberInput] = React.useState("");
+  const [allowlistNumbers, setAllowlistNumbers] = React.useState<string[]>([]);
+  const [sharedAllowlistInput, setSharedAllowlistInput] = React.useState("");
+  const [sharedAllowlistNumbers, setSharedAllowlistNumbers] = React.useState<
+    string[]
+  >([]);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [hasLoaded, setHasLoaded] = React.useState(false);
   const [groups, setGroups] = React.useState<ModerationGroup[]>([]);
@@ -42,10 +42,10 @@ export const useDashboardState = () => {
       setKeywords,
       setSharedKeywordInput,
       setSharedKeywords,
-      setAdminNumberInput,
-      setAdminNumbers,
-      setSharedAdminInput,
-      setSharedAdminNumbers,
+      setAllowlistNumberInput,
+      setAllowlistNumbers,
+      setSharedAllowlistInput,
+      setSharedAllowlistNumbers,
       setIsSyncing,
       setHasLoaded,
       setGroups,
@@ -56,18 +56,18 @@ export const useDashboardState = () => {
     }),
     [
       setActiveGroupId,
-      setAdminNumberInput,
-      setAdminNumbers,
       setGroups,
       setHasLoaded,
       setIsSyncing,
+      setAllowlistNumberInput,
+      setAllowlistNumbers,
       setKeywordInput,
       setKeywords,
       setNewGroupLink,
       setNewGroupName,
       setSelectedGroupIds,
-      setSharedAdminInput,
-      setSharedAdminNumbers,
+      setSharedAllowlistInput,
+      setSharedAllowlistNumbers,
       setSharedKeywordInput,
       setSharedKeywords,
       setToggles,
@@ -127,10 +127,10 @@ export const useDashboardState = () => {
     keywords,
     sharedKeywordInput,
     sharedKeywords,
-    adminNumberInput,
-    adminNumbers,
-    sharedAdminInput,
-    sharedAdminNumbers,
+    allowlistNumberInput,
+    allowlistNumbers,
+    sharedAllowlistInput,
+    sharedAllowlistNumbers,
     isSyncing,
     hasLoaded,
     groups,

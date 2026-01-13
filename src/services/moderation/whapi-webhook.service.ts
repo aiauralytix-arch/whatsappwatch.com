@@ -197,7 +197,7 @@ const fetchModerationConfigByWhapiGroupId = async (
 
   const { data: settingsRows, error: settingsError } = await supabase
     .from("moderation_settings")
-    .select("group_id, admin_phone_numbers, blocked_keywords")
+    .select("group_id, allowlist_phone_numbers, blocked_keywords")
     .in("group_id", groupIds);
 
   if (settingsError) {
@@ -206,11 +206,11 @@ const fetchModerationConfigByWhapiGroupId = async (
 
   const settingsByGroupId = new Map<
     string,
-    { admin_phone_numbers?: string[]; blocked_keywords?: string[] }
+    { allowlist_phone_numbers?: string[]; blocked_keywords?: string[] }
   >();
   for (const row of settingsRows ?? []) {
     settingsByGroupId.set(row.group_id, {
-      admin_phone_numbers: row.admin_phone_numbers ?? [],
+      allowlist_phone_numbers: row.allowlist_phone_numbers ?? [],
       blocked_keywords: row.blocked_keywords ?? [],
     });
   }
@@ -219,8 +219,8 @@ const fetchModerationConfigByWhapiGroupId = async (
   for (const group of groups) {
     if (!group.verified_whapi_group_id) continue;
     const settings = settingsByGroupId.get(group.id);
-    const adminNumbers = settings?.admin_phone_numbers ?? [];
-    const matchKeys = adminNumbers
+    const allowlistNumbers = settings?.allowlist_phone_numbers ?? [];
+    const matchKeys = allowlistNumbers
       .map((entry) => getPhoneMatchKey(entry))
       .filter((entry): entry is string => Boolean(entry));
     configByWhapi.set(group.verified_whapi_group_id, {

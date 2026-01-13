@@ -6,7 +6,7 @@ import {
   applyModerationDefaultsToGroups,
   updateModerationDefaults,
 } from "@/src/actions/moderation/defaults.actions";
-import { normalizeAdminNumbersInput, normalizeKeywordsInput } from "@/app/dashboard/utils/normalize";
+import { normalizeAllowlistNumbersInput, normalizeKeywordsInput } from "@/app/dashboard/utils/normalize";
 import type { DashboardState, DashboardStateSetters } from "@/app/dashboard/types";
 import type { ModerationContext } from "@/types/supabase";
 
@@ -26,13 +26,16 @@ export const useDefaultsHandlers = ({
   activeGroupId,
 }: DefaultsHandlerParams) => {
   const persistDefaults = React.useCallback(
-    async (input: { blockedKeywords?: string[]; adminPhoneNumbers?: string[] }) => {
+    async (input: {
+      blockedKeywords?: string[];
+      allowlistPhoneNumbers?: string[];
+    }) => {
       if (!hasLoaded) return;
       setters.setIsSyncing(true);
       try {
         const updated = await updateModerationDefaults(input);
         setters.setSharedKeywords(updated.blockedKeywords ?? []);
-        setters.setSharedAdminNumbers(updated.adminPhoneNumbers ?? []);
+        setters.setSharedAllowlistNumbers(updated.allowlistPhoneNumbers ?? []);
       } finally {
         setters.setIsSyncing(false);
       }
@@ -60,30 +63,36 @@ export const useDefaultsHandlers = ({
     [hasLoaded, persistDefaults, setters, state.sharedKeywords],
   );
 
-  const addSharedAdminNumbers = React.useCallback(() => {
+  const addSharedAllowlistNumbers = React.useCallback(() => {
     if (!hasLoaded) return;
-    const next = normalizeAdminNumbersInput(state.sharedAdminInput.split(","));
+    const next = normalizeAllowlistNumbersInput(
+      state.sharedAllowlistInput.split(","),
+    );
     if (next.length === 0) return;
-    const updated = Array.from(new Set([...state.sharedAdminNumbers, ...next]));
-    setters.setSharedAdminNumbers(updated);
-    setters.setSharedAdminInput("");
-    void persistDefaults({ adminPhoneNumbers: updated });
+    const updated = Array.from(
+      new Set([...state.sharedAllowlistNumbers, ...next]),
+    );
+    setters.setSharedAllowlistNumbers(updated);
+    setters.setSharedAllowlistInput("");
+    void persistDefaults({ allowlistPhoneNumbers: updated });
   }, [
     hasLoaded,
     persistDefaults,
     setters,
-    state.sharedAdminInput,
-    state.sharedAdminNumbers,
+    state.sharedAllowlistInput,
+    state.sharedAllowlistNumbers,
   ]);
 
-  const removeSharedAdminNumber = React.useCallback(
+  const removeSharedAllowlistNumber = React.useCallback(
     (number: string) => {
       if (!hasLoaded) return;
-      const updated = state.sharedAdminNumbers.filter((entry) => entry !== number);
-      setters.setSharedAdminNumbers(updated);
-      void persistDefaults({ adminPhoneNumbers: updated });
+      const updated = state.sharedAllowlistNumbers.filter(
+        (entry) => entry !== number,
+      );
+      setters.setSharedAllowlistNumbers(updated);
+      void persistDefaults({ allowlistPhoneNumbers: updated });
     },
-    [hasLoaded, persistDefaults, setters, state.sharedAdminNumbers],
+    [hasLoaded, persistDefaults, setters, state.sharedAllowlistNumbers],
   );
 
   const toggleGroupSelection = React.useCallback(
@@ -122,11 +131,11 @@ export const useDefaultsHandlers = ({
   ]);
 
   return {
-    addSharedAdminNumbers,
+    addSharedAllowlistNumbers,
     addSharedKeywords,
     applyDefaultsToSelectedGroups,
     clearSelectedGroups,
-    removeSharedAdminNumber,
+    removeSharedAllowlistNumber,
     removeSharedKeyword,
     selectAllGroups,
     toggleGroupSelection,

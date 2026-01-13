@@ -4,7 +4,7 @@ export const normalizeKeywordsInput = (input: string) =>
     .map((entry) => entry.trim())
     .filter(Boolean);
 
-export const normalizeAdminNumbersInput = (numbers: string[]) => {
+export const normalizeAllowlistNumbersInput = (numbers: string[]) => {
   const normalized = numbers
     .map((entry) => entry.trim())
     .filter(Boolean)

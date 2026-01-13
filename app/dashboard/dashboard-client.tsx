@@ -7,7 +7,7 @@ import TutorialSection from "@/app/dashboard/sections/tutorial-section";
 import GroupsSection from "@/app/dashboard/sections/groups-section";
 import SharedDefaultsSection from "@/app/dashboard/sections/shared-defaults-section";
 import ModerationTogglesSection from "@/app/dashboard/sections/moderation-toggles-section";
-import AdminAllowlistSection from "@/app/dashboard/sections/admin-allowlist-section";
+import AllowlistSection from "@/app/dashboard/sections/allowlist-section";
 import KeywordSection from "@/app/dashboard/sections/keyword-section";
 import AnalyticsSection from "@/app/dashboard/sections/analytics-section";
 import FooterSection from "@/app/dashboard/sections/footer-section";
@@ -83,15 +83,15 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
             isSyncing={state.isSyncing}
             groups={state.groups}
             selectedGroupIds={state.selectedGroupIds}
-            sharedAdminInput={state.sharedAdminInput}
-            sharedAdminNumbers={state.sharedAdminNumbers}
+            sharedAllowlistInput={state.sharedAllowlistInput}
+            sharedAllowlistNumbers={state.sharedAllowlistNumbers}
             sharedKeywordInput={state.sharedKeywordInput}
             sharedKeywords={state.sharedKeywords}
-            onSharedAdminInputChange={setters.setSharedAdminInput}
+            onSharedAllowlistInputChange={setters.setSharedAllowlistInput}
             onSharedKeywordInputChange={setters.setSharedKeywordInput}
-            onAddSharedAdmins={defaultsHandlers.addSharedAdminNumbers}
+            onAddSharedAllowlistNumbers={defaultsHandlers.addSharedAllowlistNumbers}
             onAddSharedKeywords={defaultsHandlers.addSharedKeywords}
-            onRemoveSharedAdmin={defaultsHandlers.removeSharedAdminNumber}
+            onRemoveSharedAllowlistNumber={defaultsHandlers.removeSharedAllowlistNumber}
             onRemoveSharedKeyword={defaultsHandlers.removeSharedKeyword}
             onToggleGroupSelection={defaultsHandlers.toggleGroupSelection}
             onSelectAllGroups={defaultsHandlers.selectAllGroups}
@@ -105,14 +105,14 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
           isSyncing={state.isSyncing}
           onToggle={settingsHandlers.handleToggle}
         />
-        <AdminAllowlistSection
-          adminNumberInput={state.adminNumberInput}
-          adminNumbers={state.adminNumbers}
+        <AllowlistSection
+          allowlistNumberInput={state.allowlistNumberInput}
+          allowlistNumbers={state.allowlistNumbers}
           canEdit={canEdit}
           isSyncing={state.isSyncing}
-          onAdminInputChange={setters.setAdminNumberInput}
-          onAddAdminNumbers={settingsHandlers.addAdminNumbers}
-          onRemoveAdminNumber={settingsHandlers.removeAdminNumber}
+          onAllowlistInputChange={setters.setAllowlistNumberInput}
+          onAddAllowlistNumbers={settingsHandlers.addAllowlistNumbers}
+          onRemoveAllowlistNumber={settingsHandlers.removeAllowlistNumber}
         />
         <KeywordSection
           keywordInput={state.keywordInput}

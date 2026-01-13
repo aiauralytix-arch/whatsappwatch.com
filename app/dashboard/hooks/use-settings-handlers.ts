@@ -4,7 +4,7 @@ import * as React from "react";
 
 import type { ModerationSettingsInput } from "@/types/supabase";
 import { updateModerationSettings } from "@/src/actions/moderation/settings.actions";
-import { normalizeAdminNumbersInput, normalizeKeywordsInput } from "@/app/dashboard/utils/normalize";
+import { normalizeAllowlistNumbersInput, normalizeKeywordsInput } from "@/app/dashboard/utils/normalize";
 import type { DashboardState, DashboardStateSetters } from "@/app/dashboard/types";
 
 type SettingsHandlerParams = {
@@ -58,36 +58,38 @@ export const useSettingsHandlers = ({
     void persistSettings({ blockedKeywords: updated });
   }, [canEdit, persistSettings, setters, state.keywordInput, state.keywords]);
 
-  const addAdminNumbers = React.useCallback(() => {
+  const addAllowlistNumbers = React.useCallback(() => {
     if (!canEdit) return;
-    const next = normalizeAdminNumbersInput(state.adminNumberInput.split(","));
+    const next = normalizeAllowlistNumbersInput(
+      state.allowlistNumberInput.split(","),
+    );
     if (next.length === 0) return;
-    const updated = Array.from(new Set([...state.adminNumbers, ...next]));
-    setters.setAdminNumbers(updated);
-    setters.setAdminNumberInput("");
-    void persistSettings({ adminPhoneNumbers: updated });
+    const updated = Array.from(new Set([...state.allowlistNumbers, ...next]));
+    setters.setAllowlistNumbers(updated);
+    setters.setAllowlistNumberInput("");
+    void persistSettings({ allowlistPhoneNumbers: updated });
   }, [
     canEdit,
     persistSettings,
     setters,
-    state.adminNumberInput,
-    state.adminNumbers,
+    state.allowlistNumberInput,
+    state.allowlistNumbers,
   ]);
 
-  const removeAdminNumber = React.useCallback(
+  const removeAllowlistNumber = React.useCallback(
     (number: string) => {
       if (!canEdit) return;
-      const updated = state.adminNumbers.filter((entry) => entry !== number);
-      setters.setAdminNumbers(updated);
-      void persistSettings({ adminPhoneNumbers: updated });
+      const updated = state.allowlistNumbers.filter((entry) => entry !== number);
+      setters.setAllowlistNumbers(updated);
+      void persistSettings({ allowlistPhoneNumbers: updated });
     },
-    [canEdit, persistSettings, setters, state.adminNumbers],
+    [canEdit, persistSettings, setters, state.allowlistNumbers],
   );
 
   return {
-    addAdminNumbers,
+    addAllowlistNumbers,
     addKeywords,
     handleToggle,
-    removeAdminNumber,
+    removeAllowlistNumber,
   };
 };

@@ -13,15 +13,15 @@ type SharedDefaultsSectionProps = {
   isSyncing: boolean;
   groups: ModerationGroup[];
   selectedGroupIds: string[];
-  sharedAdminInput: string;
-  sharedAdminNumbers: string[];
+  sharedAllowlistInput: string;
+  sharedAllowlistNumbers: string[];
   sharedKeywordInput: string;
   sharedKeywords: string[];
-  onSharedAdminInputChange: (value: string) => void;
+  onSharedAllowlistInputChange: (value: string) => void;
   onSharedKeywordInputChange: (value: string) => void;
-  onAddSharedAdmins: () => void;
+  onAddSharedAllowlistNumbers: () => void;
   onAddSharedKeywords: () => void;
-  onRemoveSharedAdmin: (number: string) => void;
+  onRemoveSharedAllowlistNumber: (number: string) => void;
   onRemoveSharedKeyword: (keyword: string) => void;
   onToggleGroupSelection: (groupId: string) => void;
   onSelectAllGroups: () => void;
@@ -34,15 +34,15 @@ export default function SharedDefaultsSection({
   isSyncing,
   groups,
   selectedGroupIds,
-  sharedAdminInput,
-  sharedAdminNumbers,
+  sharedAllowlistInput,
+  sharedAllowlistNumbers,
   sharedKeywordInput,
   sharedKeywords,
-  onSharedAdminInputChange,
+  onSharedAllowlistInputChange,
   onSharedKeywordInputChange,
-  onAddSharedAdmins,
+  onAddSharedAllowlistNumbers,
   onAddSharedKeywords,
-  onRemoveSharedAdmin,
+  onRemoveSharedAllowlistNumber,
   onRemoveSharedKeyword,
   onToggleGroupSelection,
   onSelectAllGroups,
@@ -55,44 +55,46 @@ export default function SharedDefaultsSection({
         <CardHeader>
           <CardTitle>Shared Defaults</CardTitle>
           <CardDescription>
-            Maintain shared admin numbers and keywords for new groups, then
+            Maintain shared allowlist numbers and keywords for new groups, then
             apply them to existing groups in bulk.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-3">
-              <Label className="text-base">Default admin allowlist</Label>
+              <Label className="text-base">Default allowlist</Label>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Input
-                  placeholder="Add default admin numbers (comma separated)"
-                  value={sharedAdminInput}
-                  onChange={(event) => onSharedAdminInputChange(event.target.value)}
+                  placeholder="Add default allowlisted numbers (comma separated)"
+                  value={sharedAllowlistInput}
+                  onChange={(event) =>
+                    onSharedAllowlistInputChange(event.target.value)
+                  }
                   disabled={!hasLoaded || isSyncing}
                 />
                 <Button
                   variant="outline"
                   className="whitespace-nowrap"
-                  onClick={onAddSharedAdmins}
+                  onClick={onAddSharedAllowlistNumbers}
                   disabled={!hasLoaded || isSyncing}
                 >
-                  Save Admins
+                  Save Allowlist
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {sharedAdminNumbers.length === 0 ? (
+                {sharedAllowlistNumbers.length === 0 ? (
                   <p className="text-sm text-[#6b6b6b]">
-                    No default admin numbers yet.
+                    No default allowlisted numbers yet.
                   </p>
                 ) : (
-                  sharedAdminNumbers.map((number) => (
+                  sharedAllowlistNumbers.map((number) => (
                     <Badge key={number} variant="soft" className="gap-2 pr-1">
                       <span>{number}</span>
                       <button
                         type="button"
                         className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9] text-[10px] font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
-                        onClick={() => onRemoveSharedAdmin(number)}
-                        aria-label="Remove default admin number"
+                        onClick={() => onRemoveSharedAllowlistNumber(number)}
+                        aria-label="Remove default allowlisted number"
                         disabled={isSyncing}
                       >
                         x
@@ -148,7 +150,7 @@ export default function SharedDefaultsSection({
             groups={groups}
             selectedGroupIds={selectedGroupIds}
             isSyncing={isSyncing}
-            sharedAdminCount={sharedAdminNumbers.length}
+            sharedAllowlistCount={sharedAllowlistNumbers.length}
             sharedKeywordCount={sharedKeywords.length}
             onToggleGroupSelection={onToggleGroupSelection}
             onSelectAllGroups={onSelectAllGroups}

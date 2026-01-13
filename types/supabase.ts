@@ -44,7 +44,7 @@ export type ModerationSettingsRow = {
   block_keywords: boolean;
   spam_protection_enabled: boolean;
   blocked_keywords: string[];
-  admin_phone_numbers: string[];
+  allowlist_phone_numbers: string[];
 };
 
 export type ModerationSettings = {
@@ -55,7 +55,7 @@ export type ModerationSettings = {
   blockKeywords: boolean;
   spamProtectionEnabled: boolean;
   blockedKeywords: string[];
-  adminPhoneNumbers: string[];
+  allowlistPhoneNumbers: string[];
 };
 
 export type ModerationSettingsInput = {
@@ -64,14 +64,14 @@ export type ModerationSettingsInput = {
   blockKeywords?: boolean;
   spamProtectionEnabled?: boolean;
   blockedKeywords?: string[];
-  adminPhoneNumbers?: string[];
+  allowlistPhoneNumbers?: string[];
 };
 
 export type ModerationDefaultsRow = {
   id: string;
   user_id: string;
   blocked_keywords: string[];
-  admin_phone_numbers: string[];
+  allowlist_phone_numbers: string[];
   created_at: string;
   updated_at: string;
 };
@@ -79,12 +79,12 @@ export type ModerationDefaultsRow = {
 export type ModerationDefaults = {
   userId: string;
   blockedKeywords: string[];
-  adminPhoneNumbers: string[];
+  allowlistPhoneNumbers: string[];
 };
 
 export type ModerationDefaultsInput = {
   blockedKeywords?: string[];
-  adminPhoneNumbers?: string[];
+  allowlistPhoneNumbers?: string[];
 };
 
 export type ModerationContext = {

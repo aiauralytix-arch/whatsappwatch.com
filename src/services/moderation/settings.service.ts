@@ -39,7 +39,9 @@ const buildNextSettings = (
   current?: ModerationSettings | null,
 ): ModerationSettings => {
   const sanitizedKeywords = normalizeKeywords(input.blockedKeywords);
-  const sanitizedAdminNumbers = normalizePhoneNumbers(input.adminPhoneNumbers);
+  const sanitizedAllowlistNumbers = normalizePhoneNumbers(
+    input.allowlistPhoneNumbers,
+  );
 
   return {
     userId,
@@ -51,8 +53,8 @@ const buildNextSettings = (
     spamProtectionEnabled:
       input.spamProtectionEnabled ?? current?.spamProtectionEnabled ?? false,
     blockedKeywords: sanitizedKeywords ?? current?.blockedKeywords ?? [],
-    adminPhoneNumbers:
-      sanitizedAdminNumbers ?? current?.adminPhoneNumbers ?? [],
+    allowlistPhoneNumbers:
+      sanitizedAllowlistNumbers ?? current?.allowlistPhoneNumbers ?? [],
   };
 };
 
@@ -76,7 +78,7 @@ export const upsertModerationSettings = async (
         block_keywords: next.blockKeywords,
         spam_protection_enabled: next.spamProtectionEnabled,
         blocked_keywords: next.blockedKeywords,
-        admin_phone_numbers: next.adminPhoneNumbers,
+        allowlist_phone_numbers: next.allowlistPhoneNumbers,
       },
       { onConflict: "group_id" },
     )

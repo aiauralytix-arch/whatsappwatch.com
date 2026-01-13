@@ -120,7 +120,8 @@ export const createModerationGroup = async (
   const defaults = await getDefaultsForUser(userId);
   if (
     defaults &&
-    (defaults.adminPhoneNumbers.length > 0 || defaults.blockedKeywords.length > 0)
+    (defaults.allowlistPhoneNumbers.length > 0 ||
+      defaults.blockedKeywords.length > 0)
   ) {
     const { error: settingsError } = await supabase
       .from("moderation_settings")
@@ -133,7 +134,7 @@ export const createModerationGroup = async (
           block_keywords: defaultSettings.block_keywords,
           spam_protection_enabled: defaultSettings.spam_protection_enabled,
           blocked_keywords: defaults.blockedKeywords,
-          admin_phone_numbers: defaults.adminPhoneNumbers,
+          allowlist_phone_numbers: defaults.allowlistPhoneNumbers,
         },
         { onConflict: "group_id" },
       );

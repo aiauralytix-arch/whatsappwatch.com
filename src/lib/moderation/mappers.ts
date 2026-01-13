@@ -29,7 +29,7 @@ export const mapSettingsRow = (
   blockKeywords: row.block_keywords,
   spamProtectionEnabled: row.spam_protection_enabled,
   blockedKeywords: row.blocked_keywords ?? [],
-  adminPhoneNumbers: row.admin_phone_numbers ?? [],
+  allowlistPhoneNumbers: row.allowlist_phone_numbers ?? [],
 });
 
 export const mapDefaultsRow = (
@@ -37,5 +37,5 @@ export const mapDefaultsRow = (
 ): ModerationDefaults => ({
   userId: row.user_id,
   blockedKeywords: row.blocked_keywords ?? [],
-  adminPhoneNumbers: row.admin_phone_numbers ?? [],
+  allowlistPhoneNumbers: row.allowlist_phone_numbers ?? [],
 });

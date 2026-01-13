@@ -4,15 +4,15 @@ import { defaultToggles, fallbackKeywords } from "./constants";
 
 const applyFallbacks = (
   data: ModerationContext,
-  setters: Pick<DashboardStateSetters, "setKeywords" | "setAdminNumbers">,
+  setters: Pick<DashboardStateSetters, "setKeywords" | "setAllowlistNumbers">,
 ) => {
   const nextFallbackKeywords =
     data.defaults?.blockedKeywords && data.defaults.blockedKeywords.length > 0
       ? data.defaults.blockedKeywords
       : fallbackKeywords;
-  const nextFallbackAdmins = data.defaults?.adminPhoneNumbers ?? [];
+  const nextFallbackAllowlist = data.defaults?.allowlistPhoneNumbers ?? [];
   setters.setKeywords(nextFallbackKeywords);
-  setters.setAdminNumbers(nextFallbackAdmins);
+  setters.setAllowlistNumbers(nextFallbackAllowlist);
 };
 
 export const applyContextState = (
@@ -22,7 +22,7 @@ export const applyContextState = (
   setters.setGroups(data.groups);
   setters.setActiveGroupId(data.activeGroupId);
   setters.setSharedKeywords(data.defaults?.blockedKeywords ?? []);
-  setters.setSharedAdminNumbers(data.defaults?.adminPhoneNumbers ?? []);
+  setters.setSharedAllowlistNumbers(data.defaults?.allowlistPhoneNumbers ?? []);
 
   if (data.settings) {
     setters.setToggles({
@@ -32,7 +32,7 @@ export const applyContextState = (
       spamProtection: data.settings.spamProtectionEnabled,
     });
     setters.setKeywords(data.settings.blockedKeywords ?? []);
-    setters.setAdminNumbers(data.settings.adminPhoneNumbers ?? []);
+    setters.setAllowlistNumbers(data.settings.allowlistPhoneNumbers ?? []);
   } else {
     setters.setToggles(defaultToggles);
     applyFallbacks(data, setters);
@@ -42,9 +42,9 @@ export const applyContextState = (
 export const resetOnError = (setters: DashboardStateSetters) => {
   setters.setToggles(defaultToggles);
   setters.setKeywords(fallbackKeywords);
-  setters.setAdminNumbers([]);
+  setters.setAllowlistNumbers([]);
   setters.setSharedKeywords([]);
-  setters.setSharedAdminNumbers([]);
+  setters.setSharedAllowlistNumbers([]);
   setters.setGroups([]);
   setters.setActiveGroupId(null);
 };

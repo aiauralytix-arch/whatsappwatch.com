@@ -54,12 +54,12 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 
 **moderation_settings**
 - One row per group (`group_id` is unique + not null).
-- Stores moderation toggles and arrays for keywords/admin allowlist.
+- Stores moderation toggles and arrays for keywords/allowlist numbers.
 - `group_id` has a foreign key to `moderation_groups`.
 
 **moderation_defaults**
 - One row per user (`user_id` is unique).
-- Stores shared admin numbers and keywords applied to new groups or bulk updates.
+- Stores shared allowlist numbers and keywords applied to new groups or bulk updates.
 
 ## Auth & middleware deep dive
 - `lib/auth/server.ts` re-exports Clerk server helpers:
