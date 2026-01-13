@@ -61,6 +61,10 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - One row per user (`user_id` is unique).
 - Stores shared allowlist numbers and keywords applied to new groups or bulk updates.
 
+**moderation_deleted_messages**
+- One row per deleted message (keyed by `whapi_message_id`).
+- Stores message text, matched keywords, and deletion reasons for later analysis.
+
 ## Auth & middleware deep dive
 - `lib/auth/server.ts` re-exports Clerk server helpers:
   - `authMiddleware` is `clerkMiddleware`.

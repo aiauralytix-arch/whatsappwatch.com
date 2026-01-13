@@ -87,6 +87,23 @@ export type ModerationDefaultsInput = {
   allowlistPhoneNumbers?: string[];
 };
 
+export type ModerationDeletedMessageRow = {
+  id: string;
+  user_id: string;
+  group_id: string | null;
+  whapi_group_id: string;
+  whapi_message_id: string;
+  sender_id: string | null;
+  sender_key: string | null;
+  message_text: string;
+  message_timestamp: string | null;
+  matched_keywords: string[];
+  has_url: boolean;
+  has_number: boolean;
+  spam_triggered: boolean;
+  created_at: string;
+};
+
 export type ModerationContext = {
   groups: ModerationGroup[];
   activeGroupId: string | null;

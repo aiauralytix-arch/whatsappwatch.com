@@ -28,7 +28,7 @@ const policySections = [
   {
     title: "Data stored",
     items: [
-      "We store group metadata, moderation toggles, blocked keywords, and allowlists.",
+      "We store group metadata, moderation toggles, blocked keywords, allowlists, and deleted message logs.",
       "Only add data that you are authorized to manage.",
     ],
   },

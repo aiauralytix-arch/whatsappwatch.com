@@ -5,6 +5,7 @@ type WhatsappTextMessage = {
   text: string;
   groupId: string | null;
   senderId: string | null;
+  timestamp: number | null;
 };
 
 type WhatsappWebhookMessage = {
@@ -45,8 +46,17 @@ type ModerationResult = {
 };
 
 type GroupModerationConfig = {
+  groupId: string;
+  userId: string;
   allowlist: Set<string>;
   blockedKeywords: string[];
+};
+
+type SpamEvaluation = {
+  isSpam: boolean;
+  hasUrl: boolean;
+  hasNumber: boolean;
+  matchedKeywords: string[];
 };
 
 const normalizePhoneDigits = (value?: string | null) => {
@@ -102,6 +112,7 @@ const extractTextMessagesFromWhatsappPayload = (
       text: message.text?.body as string,
       groupId: extractGroupId(message),
       senderId: extractSenderId(message),
+      timestamp: typeof message.timestamp === "number" ? message.timestamp : null,
     }));
 };
 
@@ -114,9 +125,14 @@ const normalizeKeywordsForMatch = (keywords?: string[] | null) =>
 const evaluateTextMessageForRuleBasedSpam = (
   message: string,
   blockedKeywords: string[],
-) => {
+): SpamEvaluation => {
   if (!message || typeof message !== "string") {
-    return false;
+    return {
+      isSpam: false,
+      hasUrl: false,
+      hasNumber: false,
+      matchedKeywords: [],
+    };
   }
 
   const lower = message.toLowerCase();
@@ -128,11 +144,17 @@ const evaluateTextMessageForRuleBasedSpam = (
 
   const hasNumber = /\d/.test(lower);
 
-  const hasSpamKeyword = blockedKeywords.some((keyword) =>
+  const matchedKeywords = blockedKeywords.filter((keyword) =>
     lower.includes(keyword),
   );
+  const hasSpamKeyword = matchedKeywords.length > 0;
 
-  return hasUrl || hasNumber || hasSpamKeyword;
+  return {
+    isSpam: hasUrl || hasNumber || hasSpamKeyword,
+    hasUrl,
+    hasNumber,
+    matchedKeywords: Array.from(new Set(matchedKeywords)),
+  };
 };
 
 const deleteWhatsappMessageById = async (messageId: string) => {
@@ -168,6 +190,13 @@ const deleteWhatsappMessageById = async (messageId: string) => {
   }
 };
 
+const toMessageTimestamp = (value?: number | null) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const date = new Date(value * 1000);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+};
+
 const fetchModerationConfigByWhapiGroupId = async (
   whapiGroupIds: Array<string | null>,
 ) => {
@@ -181,7 +210,7 @@ const fetchModerationConfigByWhapiGroupId = async (
 
   const { data: groupRows, error: groupError } = await supabase
     .from("moderation_groups")
-    .select("id, verified_whapi_group_id")
+    .select("id, user_id, verified_whapi_group_id")
     .in("verified_whapi_group_id", uniqueGroupIds);
 
   if (groupError) {
@@ -224,12 +253,47 @@ const fetchModerationConfigByWhapiGroupId = async (
       .map((entry) => getPhoneMatchKey(entry))
       .filter((entry): entry is string => Boolean(entry));
     configByWhapi.set(group.verified_whapi_group_id, {
+      groupId: group.id,
+      userId: group.user_id,
       allowlist: new Set(matchKeys),
       blockedKeywords: normalizeKeywordsForMatch(settings?.blocked_keywords),
     });
   }
 
   return configByWhapi;
+};
+
+const storeDeletedMessage = async (
+  config: GroupModerationConfig,
+  message: WhatsappTextMessage,
+  evaluation: SpamEvaluation,
+) => {
+  if (!message.groupId) return;
+  const messageTimestamp = toMessageTimestamp(message.timestamp);
+
+  const { error } = await supabase
+    .from("moderation_deleted_messages")
+    .upsert(
+      {
+        user_id: config.userId,
+        group_id: config.groupId,
+        whapi_group_id: message.groupId,
+        whapi_message_id: message.id,
+        sender_id: message.senderId,
+        sender_key: getPhoneMatchKey(message.senderId),
+        message_text: message.text,
+        message_timestamp: messageTimestamp,
+        matched_keywords: evaluation.matchedKeywords,
+        has_url: evaluation.hasUrl,
+        has_number: evaluation.hasNumber,
+        spam_triggered: evaluation.isSpam,
+      },
+      { onConflict: "whapi_message_id" },
+    );
+
+  if (error) {
+    throw new Error("Failed to store deleted message.");
+  }
 };
 
 const isSenderAllowlisted = (
@@ -256,14 +320,15 @@ export const processWhatsappModerationWorkflow = async (
   const moderationResults: ModerationResult[] = [];
 
   for (const message of extractedTextMessages) {
-    const blockedKeywords =
-      (message.groupId
-        ? configByGroupId.get(message.groupId)?.blockedKeywords
-        : null) ?? [];
-    const isSpam = evaluateTextMessageForRuleBasedSpam(
+    const config = message.groupId
+      ? configByGroupId.get(message.groupId) ?? null
+      : null;
+    const blockedKeywords = config?.blockedKeywords ?? [];
+    const evaluation = evaluateTextMessageForRuleBasedSpam(
       message.text,
       blockedKeywords,
     );
+    const isSpam = evaluation.isSpam;
     const isAllowlisted = isSenderAllowlisted(message, configByGroupId);
     const isGroupMessage = Boolean(message.groupId);
 
@@ -274,6 +339,14 @@ export const processWhatsappModerationWorkflow = async (
         wasDeleted = await deleteWhatsappMessageById(message.id);
       } catch {
         wasDeleted = false;
+      }
+    }
+
+    if (wasDeleted && config) {
+      try {
+        await storeDeletedMessage(config, message, evaluation);
+      } catch {
+        // Keep webhook resilient; storage failures should not break processing.
       }
     }
 
