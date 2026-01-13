@@ -1,6 +1,8 @@
 import type {
   ModerationDefaults,
   ModerationDefaultsRow,
+  ModerationDeletedMessage,
+  ModerationDeletedMessageRow,
   ModerationGroup,
   ModerationGroupRow,
   ModerationSettings,
@@ -38,4 +40,23 @@ export const mapDefaultsRow = (
   userId: row.user_id,
   blockedKeywords: row.blocked_keywords ?? [],
   allowlistPhoneNumbers: row.allowlist_phone_numbers ?? [],
+});
+
+export const mapDeletedMessageRow = (
+  row: ModerationDeletedMessageRow,
+): ModerationDeletedMessage => ({
+  id: row.id,
+  userId: row.user_id,
+  groupId: row.group_id,
+  whapiGroupId: row.whapi_group_id,
+  whapiMessageId: row.whapi_message_id,
+  senderId: row.sender_id,
+  senderKey: row.sender_key,
+  messageText: row.message_text,
+  messageTimestamp: row.message_timestamp,
+  matchedKeywords: row.matched_keywords ?? [],
+  hasUrl: row.has_url,
+  hasNumber: row.has_number,
+  spamTriggered: row.spam_triggered,
+  createdAt: row.created_at,
 });

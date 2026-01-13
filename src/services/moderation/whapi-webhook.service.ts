@@ -184,9 +184,12 @@ const deleteWhatsappMessageById = async (messageId: string) => {
 
   try {
     const parsed = (await response.json()) as { success?: boolean };
-    return parsed.success === true;
+    if (typeof parsed.success === "boolean") {
+      return parsed.success;
+    }
+    return true;
   } catch {
-    throw new Error("Invalid response from delete API.");
+    return true;
   }
 };
 
@@ -345,8 +348,11 @@ export const processWhatsappModerationWorkflow = async (
     if (wasDeleted && config) {
       try {
         await storeDeletedMessage(config, message, evaluation);
-      } catch {
-        // Keep webhook resilient; storage failures should not break processing.
+      } catch (error) {
+        console.error(
+          "Failed to store deleted message:",
+          error instanceof Error ? error.message : error,
+        );
       }
     }
 

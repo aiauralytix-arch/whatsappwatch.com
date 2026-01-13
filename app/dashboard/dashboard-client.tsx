@@ -9,12 +9,14 @@ import SharedDefaultsSection from "@/app/dashboard/sections/shared-defaults-sect
 import ModerationTogglesSection from "@/app/dashboard/sections/moderation-toggles-section";
 import AllowlistSection from "@/app/dashboard/sections/allowlist-section";
 import KeywordSection from "@/app/dashboard/sections/keyword-section";
+import DeletedMessagesSection from "@/app/dashboard/sections/deleted-messages-section";
 import AnalyticsSection from "@/app/dashboard/sections/analytics-section";
 import FooterSection from "@/app/dashboard/sections/footer-section";
 import { useDashboardState } from "@/app/dashboard/hooks/use-dashboard-state";
 import { useGroupHandlers } from "@/app/dashboard/hooks/use-group-handlers";
 import { useSettingsHandlers } from "@/app/dashboard/hooks/use-settings-handlers";
 import { useDefaultsHandlers } from "@/app/dashboard/hooks/use-defaults-handlers";
+import { useDeletedMessages } from "@/app/dashboard/hooks/use-deleted-messages";
 
 type DashboardClientProps = {
   userName: string;
@@ -46,6 +48,11 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
     hasLoaded: state.hasLoaded,
     refreshContext,
     activeGroupId: state.activeGroupId,
+  });
+
+  const deletedMessages = useDeletedMessages({
+    activeGroupId: state.activeGroupId,
+    hasLoaded: state.hasLoaded,
   });
 
   return (
@@ -122,6 +129,11 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
           onKeywordInputChange={setters.setKeywordInput}
           onAddKeywords={settingsHandlers.addKeywords}
           onRemoveKeyword={settingsHandlers.removeKeyword}
+        />
+        <DeletedMessagesSection
+          messages={deletedMessages.messages}
+          isLoading={deletedMessages.isLoading}
+          groupName={activeGroup?.groupName ?? activeGroup?.groupLink}
         />
         <AnalyticsSection />
         <FooterSection isSyncing={state.isSyncing} />

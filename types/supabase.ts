@@ -104,6 +104,23 @@ export type ModerationDeletedMessageRow = {
   created_at: string;
 };
 
+export type ModerationDeletedMessage = {
+  id: string;
+  userId: string;
+  groupId: string | null;
+  whapiGroupId: string;
+  whapiMessageId: string;
+  senderId: string | null;
+  senderKey: string | null;
+  messageText: string;
+  messageTimestamp: string | null;
+  matchedKeywords: string[];
+  hasUrl: boolean;
+  hasNumber: boolean;
+  spamTriggered: boolean;
+  createdAt: string;
+};
+
 export type ModerationContext = {
   groups: ModerationGroup[];
   activeGroupId: string | null;
