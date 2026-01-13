@@ -106,6 +106,7 @@ export default function GroupsSection({
     name: string;
   } | null>(null);
   const [groupNameInput, setGroupNameInput] = useState("");
+  const [verifiedPhoneLabel, setVerifiedPhoneLabel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeGroup) {
@@ -138,7 +139,32 @@ export default function GroupsSection({
     setSelectedCandidateId(null);
     setVerificationError(null);
     setVerificationNote(null);
+    setVerifiedPhoneLabel(null);
   };
+
+  useEffect(() => {
+    if (!isVerificationOpen) return;
+
+    let isActive = true;
+
+    void getPhoneVerificationStatus()
+      .then((status) => {
+        if (!isActive) return;
+        if (status.phoneNumber && status.verifiedAt) {
+          setVerifiedPhoneLabel(status.phoneNumber);
+        } else {
+          setVerifiedPhoneLabel(null);
+        }
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setVerifiedPhoneLabel(null);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isVerificationOpen]);
 
   const handleCheckVerification = async () => {
     if (!verificationTarget) return;
@@ -165,6 +191,10 @@ export default function GroupsSection({
       const userPhone = getPhoneMatchKey(phoneStatus.phoneNumber);
       if (!userPhone) {
         throw new Error("Verified phone number is invalid.");
+      }
+
+      if (!verifiedPhoneLabel) {
+        setVerifiedPhoneLabel(phoneStatus.phoneNumber);
       }
 
       const response = await fetch("/api/whapi/groups", { cache: "no-store" });
@@ -392,7 +422,7 @@ export default function GroupsSection({
                     isSyncing ||
                     groupNameInput.trim().length === 0 ||
                     groupNameInput.trim() ===
-                      (activeGroup.groupName ?? "").trim()
+                    (activeGroup.groupName ?? "").trim()
                   }
                 >
                   Save group name
@@ -446,17 +476,31 @@ export default function GroupsSection({
 
             <div className="mt-4 space-y-3 text-sm text-[#6b6b6b]">
               <p>
-                Make sure your verified number (used for OTP) is an admin in the
-                group.
+                Before verifying, make sure your OTP-verified number is an admin of the
+                WhatsApp group.
               </p>
+
               <p>
-                1. Add <span className="font-semibold text-[#161616]">9555488118</span>{" "}
-                to the WhatsApp group.
+                1. Add <span className="font-semibold text-[#161616]">9555488118</span> to
+                your WhatsApp group.
               </p>
-              <p>2. Make that number an admin in the group.</p>
+
               <p>
-                3. Click verify to check that both admins are present and the
-                name matches the WhatsApp group name.
+                2. Make <span className="font-semibold text-[#161616]">9555488118</span> an
+                admin of the group.
+              </p>
+
+              <p>
+                3. Make sure{" "}
+                <span className="font-semibold text-[#161616]">
+                  {verifiedPhoneLabel ?? "your verified number"}
+                </span>{" "}
+                is also in the group and is an admin.
+              </p>
+
+              <p>
+                4. Click <strong>Verify</strong>. We’ll check that both numbers are admins
+                and that the group name matches the real WhatsApp group.
               </p>
             </div>
 
