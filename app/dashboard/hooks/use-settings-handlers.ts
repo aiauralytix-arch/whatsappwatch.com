@@ -58,6 +58,16 @@ export const useSettingsHandlers = ({
     void persistSettings({ blockedKeywords: updated });
   }, [canEdit, persistSettings, setters, state.keywordInput, state.keywords]);
 
+  const removeKeyword = React.useCallback(
+    (keyword: string) => {
+      if (!canEdit) return;
+      const updated = state.keywords.filter((entry) => entry !== keyword);
+      setters.setKeywords(updated);
+      void persistSettings({ blockedKeywords: updated });
+    },
+    [canEdit, persistSettings, setters, state.keywords],
+  );
+
   const addAllowlistNumbers = React.useCallback(() => {
     if (!canEdit) return;
     const next = normalizeAllowlistNumbersInput(
@@ -91,5 +101,6 @@ export const useSettingsHandlers = ({
     addKeywords,
     handleToggle,
     removeAllowlistNumber,
+    removeKeyword,
   };
 };

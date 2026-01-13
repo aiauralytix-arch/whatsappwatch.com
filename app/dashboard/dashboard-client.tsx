@@ -121,6 +121,7 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
           isSyncing={state.isSyncing}
           onKeywordInputChange={setters.setKeywordInput}
           onAddKeywords={settingsHandlers.addKeywords}
+          onRemoveKeyword={settingsHandlers.removeKeyword}
         />
         <AnalyticsSection />
         <FooterSection isSyncing={state.isSyncing} />

@@ -12,6 +12,7 @@ type KeywordSectionProps = {
   isSyncing: boolean;
   onKeywordInputChange: (value: string) => void;
   onAddKeywords: () => void;
+  onRemoveKeyword: (keyword: string) => void;
 };
 
 export default function KeywordSection({
@@ -21,6 +22,7 @@ export default function KeywordSection({
   isSyncing,
   onKeywordInputChange,
   onAddKeywords,
+  onRemoveKeyword,
 }: KeywordSectionProps) {
   return (
     <section>
@@ -50,8 +52,17 @@ export default function KeywordSection({
           </div>
           <div className="flex flex-wrap gap-2">
             {keywords.map((keyword) => (
-              <Badge key={keyword} variant="soft">
-                {keyword}
+              <Badge key={keyword} variant="soft" className="gap-2 pr-1">
+                <span>{keyword}</span>
+                <button
+                  type="button"
+                  className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#fefcf9] text-[10px] font-medium leading-none text-[#6b6b6b] ring-1 ring-[#d5cec3] transition hover:bg-[#161616] hover:text-[#f6f3ee] normal-case tracking-normal"
+                  onClick={() => onRemoveKeyword(keyword)}
+                  aria-label="Remove blocked keyword"
+                  disabled={!canEdit || isSyncing}
+                >
+                  x
+                </button>
               </Badge>
             ))}
           </div>
