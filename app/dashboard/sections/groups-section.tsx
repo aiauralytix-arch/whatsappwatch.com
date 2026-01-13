@@ -333,7 +333,7 @@ export default function GroupsSection({
                   onClick={() => onSelectGroup(group.id)}
                   disabled={isSyncing}
                   title={group.groupName ?? group.groupLink ?? "Untitled group"}
-                  className="max-w-[260px] truncate"
+                  className="h-auto max-w-[260px] whitespace-normal break-words leading-snug"
                 >
                   {group.groupName ?? group.groupLink ?? "Untitled group"}
                 </Button>
