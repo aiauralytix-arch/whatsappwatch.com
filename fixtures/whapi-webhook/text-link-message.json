@@ -1,0 +1,23 @@
+{
+  "messages": [
+    {
+      "id": "rIIAcEYL66pBVOWzrl3P4w-gosBq52NVzTWyQ",
+      "from_me": false,
+      "type": "text",
+      "chat_id": "120363045434480329@g.us",
+      "timestamp": 1768293710,
+      "source": "mobile",
+      "chat_name": "Lift m chat",
+      "text": {
+        "body": "This is Test message with www.link.com"
+      },
+      "from": "917011460487",
+      "from_name": "Apoorv jain"
+    }
+  ],
+  "event": {
+    "type": "messages",
+    "event": "post"
+  },
+  "channel_id": "MANTIS-FSX25"
+}

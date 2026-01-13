@@ -1,0 +1,30 @@
+{
+  "messages": [
+    {
+      "id": "rDh17zu23Hkn_rgnbCvwJw-gjEBq52NVzTWyQ",
+      "from_me": false,
+      "type": "image",
+      "chat_id": "120363045434480329@g.us",
+      "timestamp": 1768293692,
+      "source": "mobile",
+      "chat_name": "Lift m chat",
+      "image": {
+        "id": "jpeg-ac3875ef3bb6dc7927feb8276c2bf027-823101ab9d8d5734d6c9",
+        "mime_type": "image/jpeg",
+        "file_size": 324339,
+        "sha256": "wNpaS9pX9yJJbjDCxL5W9aq42/z0MdxVtNEhwhuddmQ=",
+        "caption": "This is Test Message with photo.",
+        "width": 1024,
+        "height": 1536,
+        "preview": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEABsbGxscGx4hIR4qLSgtKj04MzM4PV1CR0JHQl2NWGdYWGdYjX2Xe3N7l33gsJycsOD/2c7Z//////////////8BGxsbGxwbHiEhHiotKC0qPTgzMzg9XUJHQkdCXY1YZ1hYZ1iNfZd7c3uXfeCwnJyw4P/Zztn////////////////CABEIAEgAMAMBIgACEQEDEQH/xAAvAAADAQEBAAAAAAAAAAAAAAAAAgMEAQUBAAMBAQAAAAAAAAAAAAAAAAACAwEE/9oADAMBAAIQAxAAAADyu6KR6Mdm3aeUno5RbIs0s3dEhOrWU6NbPYwBVf1fLh0WF8dujdLx4uUzpNmSwUiwC0FAX//EACMQAAICAgEDBQEAAAAAAAAAAAECAAMRIRIEMUETMlFSYXH/2gAIAQEAAT8ARFfGVnBFyChgViMDQi0WOmlyIa1B2hliADQlFdihHCaloNjEkYwIOWNASjqgtfHELcg+u8uQ47ZEHVAhWOsDQj3c/YYASoYHZMKMNkASuwdvMLd5WyemAyTChwQIUqJDNoAeIVrznkSDKOnax2fGABqXLwGGiVFsKItVC5FhIMFa4IDEf2CkoRkiJdWgUKNTrVDMWQ5lLqpCk4EsetyBy7QsrjB3CXIAIOvMJb7n8E4k72YpGoPTI9k5IO2oLVj2J4GYXb5gMrbBhY9tQMfyO2TCTAYGHzC6iB18znV9TC1ZBws//8QAHhEAAgICAgMAAAAAAAAAAAAAAAEREgIiA0EQEyH/2gAIAQIBAT8AvGcdHJyNL5jJ7NoGlMljW0Icpmz7McKu0jTKz0hYDRXx/8QAHBEAAgIDAQEAAAAAAAAAAAAAAAERIQISMQNB/9oACAEDAQE/ANaF5qOjxL58F2RqbYm2rYnBKujZNcNzdCyYspH1H//Z"
+      },
+      "from": "917011460487",
+      "from_name": "Apoorv jain"
+    }
+  ],
+  "event": {
+    "type": "messages",
+    "event": "post"
+  },
+  "channel_id": "MANTIS-FSX25"
+}

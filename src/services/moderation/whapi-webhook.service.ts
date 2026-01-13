@@ -1,14 +1,41 @@
+import { supabase } from "@/lib/supabase";
+
 type WhatsappTextMessage = {
   id: string;
   text: string;
+  groupId: string | null;
+  senderId: string | null;
+};
+
+type WhatsappWebhookMessage = {
+  id?: string;
+  type?: string;
+  text?: { body?: string };
+  image?: { caption?: string };
+  chat_id?: string;
+  chatId?: string;
+  chat?: { id?: string };
+  chat_name?: string;
+  group_id?: string;
+  groupId?: string;
+  from_me?: boolean;
+  author?: string;
+  from?: string;
+  from_name?: string;
+  sender?: { id?: string };
+  sender_id?: string;
+  from_id?: string;
+  timestamp?: number;
+  source?: string;
 };
 
 type WhatsappWebhookPayload = {
-  messages?: Array<{
-    id?: string;
+  messages?: WhatsappWebhookMessage[];
+  event?: {
     type?: string;
-    text?: { body?: string };
-  }>;
+    event?: string;
+  };
+  channel_id?: string;
 };
 
 type ModerationResult = {
@@ -30,6 +57,41 @@ const spamKeywords = [
   "click link",
 ];
 
+const normalizePhoneDigits = (value?: string | null) => {
+  if (!value || typeof value !== "string") return null;
+  const digits = value.replace(/[^\d]/g, "");
+  return digits.length > 0 ? digits : null;
+};
+
+const getPhoneMatchKey = (value?: string | null) => {
+  const digits = normalizePhoneDigits(value);
+  if (!digits) return null;
+  return digits.length > 10 ? digits.slice(-10) : digits;
+};
+
+const isGroupChatId = (value?: string | null) =>
+  Boolean(value && value.includes("@g.us"));
+
+const extractGroupId = (message: WhatsappWebhookMessage) => {
+  const candidate =
+    message.chat_id ??
+    message.chatId ??
+    message.chat?.id ??
+    message.group_id ??
+    message.groupId ??
+    (message.from && message.from.includes("@g.us") ? message.from : null);
+  return isGroupChatId(candidate) ? candidate : null;
+};
+
+const extractSenderId = (message: WhatsappWebhookMessage) => {
+  if (message.author) return message.author;
+  if (message.sender?.id) return message.sender.id;
+  if (message.sender_id) return message.sender_id;
+  if (message.from_id) return message.from_id;
+  if (message.from && !message.from.includes("@g.us")) return message.from;
+  return null;
+};
+
 const extractTextMessagesFromWhatsappPayload = (
   payload: WhatsappWebhookPayload,
 ): WhatsappTextMessage[] => {
@@ -38,10 +100,16 @@ const extractTextMessagesFromWhatsappPayload = (
   }
 
   return payload.messages
-    .filter((message) => message.type === "text" && message.text?.body && message.id)
+    .filter((message) => !message.from_me)
+    .filter(
+      (message) =>
+        message.type === "text" && message.text?.body && message.id,
+    )
     .map((message) => ({
       id: message.id as string,
       text: message.text?.body as string,
+      groupId: extractGroupId(message),
+      senderId: extractSenderId(message),
     }));
 };
 
@@ -99,20 +167,91 @@ const deleteWhatsappMessageById = async (messageId: string) => {
   }
 };
 
+const fetchAllowlistByWhapiGroupId = async (
+  whapiGroupIds: Array<string | null>,
+) => {
+  const uniqueGroupIds = Array.from(
+    new Set(whapiGroupIds.filter((id): id is string => Boolean(id))),
+  );
+
+  if (uniqueGroupIds.length === 0) {
+    return new Map<string, Set<string>>();
+  }
+
+  const { data: groupRows, error: groupError } = await supabase
+    .from("moderation_groups")
+    .select("id, verified_whapi_group_id")
+    .in("verified_whapi_group_id", uniqueGroupIds);
+
+  if (groupError) {
+    throw new Error("Failed to load moderation groups.");
+  }
+
+  const groups = groupRows ?? [];
+  const groupIds = groups.map((group) => group.id);
+
+  if (groupIds.length === 0) {
+    return new Map<string, Set<string>>();
+  }
+
+  const { data: settingsRows, error: settingsError } = await supabase
+    .from("moderation_settings")
+    .select("group_id, admin_phone_numbers")
+    .in("group_id", groupIds);
+
+  if (settingsError) {
+    throw new Error("Failed to load moderation settings.");
+  }
+
+  const settingsByGroupId = new Map<string, string[]>();
+  for (const row of settingsRows ?? []) {
+    settingsByGroupId.set(row.group_id, row.admin_phone_numbers ?? []);
+  }
+
+  const allowlistByWhapi = new Map<string, Set<string>>();
+  for (const group of groups) {
+    if (!group.verified_whapi_group_id) continue;
+    const adminNumbers = settingsByGroupId.get(group.id) ?? [];
+    const matchKeys = adminNumbers
+      .map((entry) => getPhoneMatchKey(entry))
+      .filter((entry): entry is string => Boolean(entry));
+    allowlistByWhapi.set(group.verified_whapi_group_id, new Set(matchKeys));
+  }
+
+  return allowlistByWhapi;
+};
+
+const isSenderAllowlisted = (
+  message: WhatsappTextMessage,
+  allowlistByGroupId: Map<string, Set<string>>,
+) => {
+  if (!message.groupId || !message.senderId) return false;
+  const allowlist = allowlistByGroupId.get(message.groupId);
+  if (!allowlist || allowlist.size === 0) return false;
+  const senderKey = getPhoneMatchKey(message.senderId);
+  if (!senderKey) return false;
+  return allowlist.has(senderKey);
+};
+
 export const processWhatsappModerationWorkflow = async (
   webhookPayload: WhatsappWebhookPayload,
 ): Promise<ModerationResult[]> => {
   const extractedTextMessages =
     extractTextMessagesFromWhatsappPayload(webhookPayload);
+  const allowlistByGroupId = await fetchAllowlistByWhapiGroupId(
+    extractedTextMessages.map((message) => message.groupId),
+  );
 
   const moderationResults: ModerationResult[] = [];
 
   for (const message of extractedTextMessages) {
     const isSpam = evaluateTextMessageForRuleBasedSpam(message.text);
+    const isAllowlisted = isSenderAllowlisted(message, allowlistByGroupId);
+    const isGroupMessage = Boolean(message.groupId);
 
     let wasDeleted = false;
 
-    if (isSpam) {
+    if (isSpam && !isAllowlisted && isGroupMessage) {
       try {
         wasDeleted = await deleteWhatsappMessageById(message.id);
       } catch {
