@@ -8,6 +8,7 @@ import {
 import {
   enforceGroupLimit,
   requireGroupLink,
+  requireGroupName,
 } from "@/src/lib/moderation/validators";
 import { getDefaultsForUser } from "./defaults.service";
 import { defaultSettings } from "@/src/lib/moderation/settings-constants";
@@ -49,11 +50,12 @@ export const getGroupForUser = async (userId: string, groupId: string) => {
 export const createModerationGroup = async (
   userId: string,
   groupLink: string,
-  groupName: string | undefined,
+  groupName: string,
   userProfile: Parameters<typeof upsertUserProfile>[0],
 ): Promise<ModerationGroup> => {
   const normalizedGroupLink = normalizeGroupLink(groupLink);
   const normalizedGroupName = normalizeGroupName(groupName);
+  const resolvedGroupName = requireGroupName(normalizedGroupName);
 
   requireGroupLink(normalizedGroupLink);
 
@@ -71,13 +73,10 @@ export const createModerationGroup = async (
   }
 
   if (existing) {
-    if (
-      normalizedGroupName !== undefined &&
-      normalizedGroupName !== existing.group_name
-    ) {
+    if (resolvedGroupName !== existing.group_name) {
       const { data: updated, error: updateError } = await supabase
         .from("moderation_groups")
-        .update({ group_name: normalizedGroupName })
+        .update({ group_name: resolvedGroupName })
         .eq("id", existing.id)
         .eq("user_id", userId)
         .select(groupSelect)
@@ -109,7 +108,7 @@ export const createModerationGroup = async (
     .insert({
       user_id: userId,
       group_link: normalizedGroupLink,
-      group_name: normalizedGroupName ?? null,
+      group_name: resolvedGroupName,
     })
     .select(groupSelect)
     .single();
@@ -178,7 +177,7 @@ export const updateModerationGroupName = async (
   }
 
   const normalizedGroupName = normalizeGroupName(groupName);
-  const nextName = normalizedGroupName ?? null;
+  const nextName = requireGroupName(normalizedGroupName);
 
   if (nextName === group.group_name) {
     return mapGroupRow(group);

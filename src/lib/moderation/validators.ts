@@ -12,6 +12,13 @@ export const requireGroupLink = (groupLink?: string | null) => {
   return groupLink;
 };
 
+export const requireGroupName = (groupName?: string | null) => {
+  if (!groupName) {
+    throw new Error("Group name is required.");
+  }
+  return groupName;
+};
+
 export const requireDefaultsConfigured = (hasDefaults: boolean) => {
   if (!hasDefaults) {
     throw new Error("No default lists configured.");

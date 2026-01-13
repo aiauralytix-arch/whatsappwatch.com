@@ -152,7 +152,9 @@ export default function GroupsSection({
     try {
       const targetName = normalizeGroupName(verificationTarget.name);
       if (!targetName) {
-        throw new Error("Add a group name before verifying.");
+        throw new Error(
+          "Group name is required and should match the WhatsApp group name before verifying.",
+        );
       }
 
       const phoneStatus = await getPhoneVerificationStatus();
@@ -215,7 +217,7 @@ export default function GroupsSection({
 
       if (matches.length === 0) {
         throw new Error(
-          "No matching group found. Confirm the group name and that your verified number plus 9555488118 are admins.",
+          "No matching group found. Confirm the group name matches the WhatsApp group name and that your verified number plus 9555488118 are admins.",
         );
       }
 
@@ -272,19 +274,24 @@ export default function GroupsSection({
         <CardHeader>
           <CardTitle>Groups</CardTitle>
           <CardDescription>
-            Add up to 50 groups. Select a group to edit its moderation settings.
+            Add up to 50 groups. Group name is required and should match the
+            WhatsApp group name as closely as possible for verification.
             Subscription is Rs 299 per group.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3">
             <Input
-              placeholder="Group name (optional)"
+              placeholder="Group name (required)"
               value={newGroupName}
               onChange={(event) => onGroupNameChange(event.target.value)}
               maxLength={80}
               disabled={!hasLoaded || isSyncing}
             />
+            <p className="text-xs text-[#6b6b6b]">
+              Use the WhatsApp group name as closely as possible. It is required
+              for verification.
+            </p>
             <Input
               placeholder="https://chat.whatsapp.com/your-invite-link"
               value={newGroupLink}
@@ -302,6 +309,7 @@ export default function GroupsSection({
                 !hasLoaded ||
                 isSyncing ||
                 groups.length >= 50 ||
+                newGroupName.trim().length === 0 ||
                 newGroupLink.trim().length === 0
               }
             >
@@ -314,7 +322,7 @@ export default function GroupsSection({
           <div className="flex flex-wrap gap-2">
             {groups.length === 0 ? (
               <p className="text-sm text-[#6b6b6b]">
-                No groups yet. Add a WhatsApp invite link to begin.
+                No groups yet. Add the WhatsApp group name and invite link to begin.
               </p>
             ) : (
               groups.map((group) => (
@@ -362,12 +370,16 @@ export default function GroupsSection({
               </p>
               <div className="mt-4 space-y-3">
                 <Input
-                  placeholder="Update group name"
+                  placeholder="Update group name (required)"
                   value={groupNameInput}
                   onChange={(event) => setGroupNameInput(event.target.value)}
                   maxLength={80}
                   disabled={!activeGroupId || isSyncing}
                 />
+                <p className="text-xs text-[#6b6b6b]">
+                  Group name is required and should match the WhatsApp group name
+                  as closely as possible.
+                </p>
                 <Button
                   variant="outline"
                   size="sm"
@@ -378,6 +390,7 @@ export default function GroupsSection({
                   disabled={
                     !activeGroupId ||
                     isSyncing ||
+                    groupNameInput.trim().length === 0 ||
                     groupNameInput.trim() ===
                       (activeGroup.groupName ?? "").trim()
                   }
@@ -443,7 +456,7 @@ export default function GroupsSection({
               <p>2. Make that number an admin in the group.</p>
               <p>
                 3. Click verify to check that both admins are present and the
-                name matches.
+                name matches the WhatsApp group name.
               </p>
             </div>
 

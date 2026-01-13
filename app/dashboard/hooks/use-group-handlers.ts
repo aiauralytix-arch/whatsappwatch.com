@@ -28,10 +28,11 @@ export const useGroupHandlers = ({
 }: GroupHandlerParams) => {
   const handleAddGroup = React.useCallback(() => {
     if (!hasLoaded) return;
-    const trimmed = state.newGroupLink.trim();
-    if (!trimmed) return;
+    const trimmedLink = state.newGroupLink.trim();
+    const trimmedName = state.newGroupName.trim();
+    if (!trimmedLink || !trimmedName) return;
     setters.setIsSyncing(true);
-    void createModerationGroup(trimmed, state.newGroupName)
+    void createModerationGroup(trimmedLink, trimmedName)
       .then((group) => refreshContext(group.id))
       .then(() => {
         setters.setNewGroupLink("");
@@ -68,8 +69,10 @@ export const useGroupHandlers = ({
 
   const handleRenameGroup = React.useCallback(
     (groupId: string, groupName: string) => {
+      const trimmedName = groupName.trim();
+      if (!trimmedName) return;
       setters.setIsSyncing(true);
-      void updateModerationGroupName(groupId, groupName)
+      void updateModerationGroupName(groupId, trimmedName)
         .then((group) => refreshContext(group.id))
         .finally(() => {
           setters.setIsSyncing(false);

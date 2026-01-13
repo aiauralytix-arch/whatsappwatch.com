@@ -12,7 +12,7 @@ import { requireGroupId } from "@/src/lib/moderation/validators";
 
 export async function createModerationGroup(
   groupLink: string,
-  groupName?: string,
+  groupName: string,
 ) {
   const user = await currentUser();
 
