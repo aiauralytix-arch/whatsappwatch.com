@@ -44,18 +44,10 @@ type ModerationResult = {
   deleted: boolean;
 };
 
-const spamKeywords = [
-  "join group",
-  "join this group",
-  "share group",
-  "whatsapp group",
-  "telegram group",
-  "earn money",
-  "make money",
-  "free money",
-  "online earning",
-  "click link",
-];
+type GroupModerationConfig = {
+  allowlist: Set<string>;
+  blockedKeywords: string[];
+};
 
 const normalizePhoneDigits = (value?: string | null) => {
   if (!value || typeof value !== "string") return null;
@@ -113,7 +105,16 @@ const extractTextMessagesFromWhatsappPayload = (
     }));
 };
 
-const evaluateTextMessageForRuleBasedSpam = (message: string) => {
+const normalizeKeywordsForMatch = (keywords?: string[] | null) =>
+  (keywords ?? [])
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+
+const evaluateTextMessageForRuleBasedSpam = (
+  message: string,
+  blockedKeywords: string[],
+) => {
   if (!message || typeof message !== "string") {
     return false;
   }
@@ -127,7 +128,7 @@ const evaluateTextMessageForRuleBasedSpam = (message: string) => {
 
   const hasNumber = /\d/.test(lower);
 
-  const hasSpamKeyword = spamKeywords.some((keyword) =>
+  const hasSpamKeyword = blockedKeywords.some((keyword) =>
     lower.includes(keyword),
   );
 
@@ -167,7 +168,7 @@ const deleteWhatsappMessageById = async (messageId: string) => {
   }
 };
 
-const fetchAllowlistByWhapiGroupId = async (
+const fetchModerationConfigByWhapiGroupId = async (
   whapiGroupIds: Array<string | null>,
 ) => {
   const uniqueGroupIds = Array.from(
@@ -175,7 +176,7 @@ const fetchAllowlistByWhapiGroupId = async (
   );
 
   if (uniqueGroupIds.length === 0) {
-    return new Map<string, Set<string>>();
+    return new Map<string, GroupModerationConfig>();
   }
 
   const { data: groupRows, error: groupError } = await supabase
@@ -191,42 +192,52 @@ const fetchAllowlistByWhapiGroupId = async (
   const groupIds = groups.map((group) => group.id);
 
   if (groupIds.length === 0) {
-    return new Map<string, Set<string>>();
+    return new Map<string, GroupModerationConfig>();
   }
 
   const { data: settingsRows, error: settingsError } = await supabase
     .from("moderation_settings")
-    .select("group_id, admin_phone_numbers")
+    .select("group_id, admin_phone_numbers, blocked_keywords")
     .in("group_id", groupIds);
 
   if (settingsError) {
     throw new Error("Failed to load moderation settings.");
   }
 
-  const settingsByGroupId = new Map<string, string[]>();
+  const settingsByGroupId = new Map<
+    string,
+    { admin_phone_numbers?: string[]; blocked_keywords?: string[] }
+  >();
   for (const row of settingsRows ?? []) {
-    settingsByGroupId.set(row.group_id, row.admin_phone_numbers ?? []);
+    settingsByGroupId.set(row.group_id, {
+      admin_phone_numbers: row.admin_phone_numbers ?? [],
+      blocked_keywords: row.blocked_keywords ?? [],
+    });
   }
 
-  const allowlistByWhapi = new Map<string, Set<string>>();
+  const configByWhapi = new Map<string, GroupModerationConfig>();
   for (const group of groups) {
     if (!group.verified_whapi_group_id) continue;
-    const adminNumbers = settingsByGroupId.get(group.id) ?? [];
+    const settings = settingsByGroupId.get(group.id);
+    const adminNumbers = settings?.admin_phone_numbers ?? [];
     const matchKeys = adminNumbers
       .map((entry) => getPhoneMatchKey(entry))
       .filter((entry): entry is string => Boolean(entry));
-    allowlistByWhapi.set(group.verified_whapi_group_id, new Set(matchKeys));
+    configByWhapi.set(group.verified_whapi_group_id, {
+      allowlist: new Set(matchKeys),
+      blockedKeywords: normalizeKeywordsForMatch(settings?.blocked_keywords),
+    });
   }
 
-  return allowlistByWhapi;
+  return configByWhapi;
 };
 
 const isSenderAllowlisted = (
   message: WhatsappTextMessage,
-  allowlistByGroupId: Map<string, Set<string>>,
+  configByGroupId: Map<string, GroupModerationConfig>,
 ) => {
   if (!message.groupId || !message.senderId) return false;
-  const allowlist = allowlistByGroupId.get(message.groupId);
+  const allowlist = configByGroupId.get(message.groupId)?.allowlist;
   if (!allowlist || allowlist.size === 0) return false;
   const senderKey = getPhoneMatchKey(message.senderId);
   if (!senderKey) return false;
@@ -238,15 +249,22 @@ export const processWhatsappModerationWorkflow = async (
 ): Promise<ModerationResult[]> => {
   const extractedTextMessages =
     extractTextMessagesFromWhatsappPayload(webhookPayload);
-  const allowlistByGroupId = await fetchAllowlistByWhapiGroupId(
+  const configByGroupId = await fetchModerationConfigByWhapiGroupId(
     extractedTextMessages.map((message) => message.groupId),
   );
 
   const moderationResults: ModerationResult[] = [];
 
   for (const message of extractedTextMessages) {
-    const isSpam = evaluateTextMessageForRuleBasedSpam(message.text);
-    const isAllowlisted = isSenderAllowlisted(message, allowlistByGroupId);
+    const blockedKeywords =
+      (message.groupId
+        ? configByGroupId.get(message.groupId)?.blockedKeywords
+        : null) ?? [];
+    const isSpam = evaluateTextMessageForRuleBasedSpam(
+      message.text,
+      blockedKeywords,
+    );
+    const isAllowlisted = isSenderAllowlisted(message, configByGroupId);
     const isGroupMessage = Boolean(message.groupId);
 
     let wasDeleted = false;
