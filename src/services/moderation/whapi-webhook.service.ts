@@ -135,7 +135,8 @@ const extractModerationMessagesFromWhatsappPayload = (
   return payload.messages
     .filter((message) => !message.from_me)
     .filter((message) => Boolean(message.id))
-    .flatMap((message) => {
+    .flatMap<WhatsappModerationMessage>(
+      (message): WhatsappModerationMessage[] => {
       const groupId = extractGroupId(message);
       const senderId = extractSenderId(message);
       const timestamp =
@@ -178,7 +179,8 @@ const extractModerationMessagesFromWhatsappPayload = (
       }
 
       return [];
-    });
+    },
+    );
 };
 
 const normalizeKeywordsForMatch = (keywords?: string[] | null) =>
