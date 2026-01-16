@@ -28,6 +28,7 @@ export const applyContextState = (
     setters.setToggles({
       phoneNumbers: data.settings.blockPhoneNumbers,
       links: data.settings.blockLinks,
+      groupInvites: data.settings.blockGroupInvites,
       keywords: data.settings.blockKeywords,
       spamProtection: data.settings.spamProtectionEnabled,
     });

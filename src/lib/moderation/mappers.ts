@@ -28,6 +28,7 @@ export const mapSettingsRow = (
   groupId: row.group_id,
   blockPhoneNumbers: row.block_phone_numbers,
   blockLinks: row.block_links,
+  blockGroupInvites: row.block_group_invites,
   blockKeywords: row.block_keywords,
   spamProtectionEnabled: row.spam_protection_enabled,
   blockedKeywords: row.blocked_keywords ?? [],

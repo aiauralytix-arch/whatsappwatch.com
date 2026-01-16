@@ -4,6 +4,7 @@ import type { ModerationGroup } from "@/types/supabase";
 export type ToggleState = {
   phoneNumbers: boolean;
   links: boolean;
+  groupInvites: boolean;
   keywords: boolean;
   spamProtection: boolean;
 };

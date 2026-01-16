@@ -1,8 +1,11 @@
 import { supabase } from "@/lib/supabase";
+import { defaultSettings } from "@/src/lib/moderation/settings-constants";
 
-type WhatsappTextMessage = {
+type WhatsappModerationMessage = {
   id: string;
+  type: "text" | "group_invite";
   text: string;
+  inviteUrl: string | null;
   groupId: string | null;
   senderId: string | null;
   timestamp: number | null;
@@ -13,6 +16,7 @@ type WhatsappWebhookMessage = {
   type?: string;
   text?: { body?: string };
   image?: { caption?: string };
+  group_invite?: { body?: string; url?: string; title?: string };
   chat_id?: string;
   chatId?: string;
   chat?: { id?: string };
@@ -50,6 +54,10 @@ type GroupModerationConfig = {
   userId: string;
   allowlist: Set<string>;
   blockedKeywords: string[];
+  blockPhoneNumbers: boolean;
+  blockLinks: boolean;
+  blockGroupInvites: boolean;
+  blockKeywords: boolean;
 };
 
 type SpamEvaluation = {
@@ -57,6 +65,13 @@ type SpamEvaluation = {
   hasUrl: boolean;
   hasNumber: boolean;
   matchedKeywords: string[];
+};
+
+type RuleBasedFlags = {
+  blockPhoneNumbers: boolean;
+  blockLinks: boolean;
+  blockGroupInvites: boolean;
+  blockKeywords: boolean;
 };
 
 const PHONE_DIGIT_MIN = 8;
@@ -110,26 +125,60 @@ const extractSenderId = (message: WhatsappWebhookMessage) => {
   return null;
 };
 
-const extractTextMessagesFromWhatsappPayload = (
+const extractModerationMessagesFromWhatsappPayload = (
   payload: WhatsappWebhookPayload,
-): WhatsappTextMessage[] => {
+): WhatsappModerationMessage[] => {
   if (!payload || !Array.isArray(payload.messages)) {
     return [];
   }
 
   return payload.messages
     .filter((message) => !message.from_me)
-    .filter(
-      (message) =>
-        message.type === "text" && message.text?.body && message.id,
-    )
-    .map((message) => ({
-      id: message.id as string,
-      text: message.text?.body as string,
-      groupId: extractGroupId(message),
-      senderId: extractSenderId(message),
-      timestamp: typeof message.timestamp === "number" ? message.timestamp : null,
-    }));
+    .filter((message) => Boolean(message.id))
+    .flatMap((message) => {
+      const groupId = extractGroupId(message);
+      const senderId = extractSenderId(message);
+      const timestamp =
+        typeof message.timestamp === "number" ? message.timestamp : null;
+
+      if (message.type === "text" && message.text?.body) {
+        return [
+          {
+            id: message.id as string,
+            type: "text",
+            text: message.text.body,
+            inviteUrl: null,
+            groupId,
+            senderId,
+            timestamp,
+          },
+        ];
+      }
+
+      if (message.type === "group_invite") {
+        const inviteText =
+          message.group_invite?.body ??
+          message.group_invite?.url ??
+          message.group_invite?.title ??
+          "Group invite";
+        const inviteUrl =
+          message.group_invite?.url ?? message.group_invite?.body ?? null;
+
+        return [
+          {
+            id: message.id as string,
+            type: "group_invite",
+            text: inviteText,
+            inviteUrl,
+            groupId,
+            senderId,
+            timestamp,
+          },
+        ];
+      }
+
+      return [];
+    });
 };
 
 const normalizeKeywordsForMatch = (keywords?: string[] | null) =>
@@ -138,9 +187,30 @@ const normalizeKeywordsForMatch = (keywords?: string[] | null) =>
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
 
+const getRuleBasedFlags = (
+  config?: GroupModerationConfig | null,
+): RuleBasedFlags => {
+  if (!config) {
+    return {
+      blockPhoneNumbers: defaultSettings.block_phone_numbers,
+      blockLinks: defaultSettings.block_links,
+      blockGroupInvites: defaultSettings.block_group_invites,
+      blockKeywords: defaultSettings.block_keywords,
+    };
+  }
+
+  return {
+    blockPhoneNumbers: config.blockPhoneNumbers,
+    blockLinks: config.blockLinks,
+    blockGroupInvites: config.blockGroupInvites,
+    blockKeywords: config.blockKeywords,
+  };
+};
+
 const evaluateTextMessageForRuleBasedSpam = (
   message: string,
   blockedKeywords: string[],
+  flags: RuleBasedFlags,
 ): SpamEvaluation => {
   if (!message || typeof message !== "string") {
     return {
@@ -164,13 +234,43 @@ const evaluateTextMessageForRuleBasedSpam = (
     lower.includes(keyword),
   );
   const hasSpamKeyword = matchedKeywords.length > 0;
+  const blockLinks = flags.blockLinks && hasUrl;
+  const blockNumbers = flags.blockPhoneNumbers && hasNumber;
+  const blockKeywords = flags.blockKeywords && hasSpamKeyword;
 
   return {
-    isSpam: hasUrl || hasNumber || hasSpamKeyword,
+    isSpam: blockLinks || blockNumbers || blockKeywords,
     hasUrl,
     hasNumber,
     matchedKeywords: Array.from(new Set(matchedKeywords)),
   };
+};
+
+const evaluateModerationMessageForSpam = (
+  message: WhatsappModerationMessage,
+  config?: GroupModerationConfig | null,
+): SpamEvaluation => {
+  const flags = getRuleBasedFlags(config);
+
+  if (message.type === "group_invite") {
+    const hasUrl =
+      Boolean(message.inviteUrl) ||
+      (typeof message.text === "string" &&
+        message.text.toLowerCase().includes("http"));
+
+    return {
+      isSpam: flags.blockGroupInvites,
+      hasUrl,
+      hasNumber: false,
+      matchedKeywords: [],
+    };
+  }
+
+  return evaluateTextMessageForRuleBasedSpam(
+    message.text,
+    config?.blockedKeywords ?? [],
+    flags,
+  );
 };
 
 const deleteWhatsappMessageById = async (messageId: string) => {
@@ -245,7 +345,9 @@ const fetchModerationConfigByWhapiGroupId = async (
 
   const { data: settingsRows, error: settingsError } = await supabase
     .from("moderation_settings")
-    .select("group_id, allowlist_phone_numbers, blocked_keywords")
+    .select(
+      "group_id, allowlist_phone_numbers, blocked_keywords, block_phone_numbers, block_links, block_group_invites, block_keywords",
+    )
     .in("group_id", groupIds);
 
   if (settingsError) {
@@ -254,12 +356,23 @@ const fetchModerationConfigByWhapiGroupId = async (
 
   const settingsByGroupId = new Map<
     string,
-    { allowlist_phone_numbers?: string[]; blocked_keywords?: string[] }
+    {
+      allowlist_phone_numbers?: string[];
+      blocked_keywords?: string[];
+      block_phone_numbers?: boolean;
+      block_links?: boolean;
+      block_group_invites?: boolean;
+      block_keywords?: boolean;
+    }
   >();
   for (const row of settingsRows ?? []) {
     settingsByGroupId.set(row.group_id, {
       allowlist_phone_numbers: row.allowlist_phone_numbers ?? [],
       blocked_keywords: row.blocked_keywords ?? [],
+      block_phone_numbers: row.block_phone_numbers ?? false,
+      block_links: row.block_links ?? false,
+      block_group_invites: row.block_group_invites ?? false,
+      block_keywords: row.block_keywords ?? false,
     });
   }
 
@@ -276,6 +389,12 @@ const fetchModerationConfigByWhapiGroupId = async (
       userId: group.user_id,
       allowlist: new Set(matchKeys),
       blockedKeywords: normalizeKeywordsForMatch(settings?.blocked_keywords),
+      blockPhoneNumbers:
+        settings?.block_phone_numbers ?? defaultSettings.block_phone_numbers,
+      blockLinks: settings?.block_links ?? defaultSettings.block_links,
+      blockGroupInvites:
+        settings?.block_group_invites ?? defaultSettings.block_group_invites,
+      blockKeywords: settings?.block_keywords ?? defaultSettings.block_keywords,
     });
   }
 
@@ -284,7 +403,7 @@ const fetchModerationConfigByWhapiGroupId = async (
 
 const storeDeletedMessage = async (
   config: GroupModerationConfig,
-  message: WhatsappTextMessage,
+  message: WhatsappModerationMessage,
   evaluation: SpamEvaluation,
 ) => {
   if (!message.groupId) return;
@@ -316,7 +435,7 @@ const storeDeletedMessage = async (
 };
 
 const isSenderAllowlisted = (
-  message: WhatsappTextMessage,
+  message: WhatsappModerationMessage,
   configByGroupId: Map<string, GroupModerationConfig>,
 ) => {
   if (!message.groupId || !message.senderId) return false;
@@ -330,23 +449,19 @@ const isSenderAllowlisted = (
 export const processWhatsappModerationWorkflow = async (
   webhookPayload: WhatsappWebhookPayload,
 ): Promise<ModerationResult[]> => {
-  const extractedTextMessages =
-    extractTextMessagesFromWhatsappPayload(webhookPayload);
+  const extractedMessages =
+    extractModerationMessagesFromWhatsappPayload(webhookPayload);
   const configByGroupId = await fetchModerationConfigByWhapiGroupId(
-    extractedTextMessages.map((message) => message.groupId),
+    extractedMessages.map((message) => message.groupId),
   );
 
   const moderationResults: ModerationResult[] = [];
 
-  for (const message of extractedTextMessages) {
+  for (const message of extractedMessages) {
     const config = message.groupId
       ? configByGroupId.get(message.groupId) ?? null
       : null;
-    const blockedKeywords = config?.blockedKeywords ?? [];
-    const evaluation = evaluateTextMessageForRuleBasedSpam(
-      message.text,
-      blockedKeywords,
-    );
+    const evaluation = evaluateModerationMessageForSpam(message, config);
     const isSpam = evaluation.isSpam;
     const isAllowlisted = isSenderAllowlisted(message, configByGroupId);
     const isGroupMessage = Boolean(message.groupId);

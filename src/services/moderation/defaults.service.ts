@@ -132,6 +132,8 @@ export const applyDefaultsToGroups = async (
       block_phone_numbers:
         current?.block_phone_numbers ?? defaultSettings.block_phone_numbers,
       block_links: current?.block_links ?? defaultSettings.block_links,
+      block_group_invites:
+        current?.block_group_invites ?? defaultSettings.block_group_invites,
       block_keywords: current?.block_keywords ?? defaultSettings.block_keywords,
       spam_protection_enabled:
         current?.spam_protection_enabled ??

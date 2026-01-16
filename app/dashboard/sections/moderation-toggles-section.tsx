@@ -29,6 +29,11 @@ const toggleItems: Array<{
     description: "Block outbound links and keep the group focused.",
   },
   {
+    id: "groupInvites",
+    label: "Delete messages containing WhatsApp group invites",
+    description: "Block shared invite links to other groups.",
+  },
+  {
     id: "keywords",
     label: "Delete messages containing configured keywords",
     description: "Auto-remove content that matches your blocked list.",

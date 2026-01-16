@@ -40,6 +40,7 @@ export const useSettingsHandlers = ({
       const mapKey = {
         phoneNumbers: "blockPhoneNumbers",
         links: "blockLinks",
+        groupInvites: "blockGroupInvites",
         keywords: "blockKeywords",
         spamProtection: "spamProtectionEnabled",
       } as const;
