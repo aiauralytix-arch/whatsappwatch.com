@@ -4,7 +4,7 @@
 - Purpose: marketing site + admin dashboard for managing WhatsApp group moderation settings.
 - Primary users: WhatsApp group admins.
 - Problem solved: centralized configuration of moderation rules per group.
-- Explicitly out of scope: WhatsApp message ingestion/moderation, payments, analytics pipelines, notifications.
+- Explicitly out of scope: full WhatsApp bot orchestration, payments, analytics pipelines, notifications.
 
 ## Architecture map
 **Frontend (Next.js App Router)**
@@ -13,10 +13,12 @@
 - Auth pages in `app/(auth)` (`/sign-in`, `/sign-up`).
 - Tailwind CSS for styling, Radix UI primitives in `components/ui`.
 
-**Backend (Server actions only)**
+**Backend (Server actions + minimal API routes)**
 - Server actions live in `src/actions/moderation/*.actions.ts` (`"use server"`).
 - Business logic and Supabase access live in `src/services/moderation`.
-- No custom API routes.
+- Minimal API routes under `app/api/whapi`:
+  - `/api/whapi/webhook` handles Whapi webhook moderation.
+  - `/api/whapi/groups` supports group verification lookups.
 
 **Auth**
 - Clerk for auth (provider in `app/providers.tsx`).
@@ -39,6 +41,14 @@ Browser
                     -> Result back to client
 ```
 
+```
+Whapi webhook
+  -> /api/whapi/webhook
+     -> src/services/moderation/whapi-webhook.service.ts
+        -> Supabase (service role key)
+           -> Optional delete call to Whapi API
+```
+
 ## Data model (Supabase)
 The data model is intentionally minimal and keyed off Clerk user IDs.
 
@@ -56,6 +66,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - One row per group (`group_id` is unique + not null).
 - Stores moderation toggles and arrays for keywords/allowlist numbers.
 - `group_id` has a foreign key to `moderation_groups`.
+  - Current toggles: `block_phone_numbers`, `block_links`, `block_group_invites`, `block_keywords`.
 
 **moderation_defaults**
 - One row per user (`user_id` is unique).
@@ -116,13 +127,15 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 ## External services
 - Clerk: authentication and user management.
 - Supabase: Postgres storage (service role key used server-side).
-- WhatsApp: conceptual only; no integration in this repo.
+- WhatsApp (via Whapi): webhook moderation + delete API calls.
 - Stripe/Payments: not implemented (subscription fields are placeholders).
 
 ## Environment & configuration
 - Required:
   - `NEXT_PUBLIC_SUPABASE_URL` (public)
   - `SUPABASE_SERVICE_ROLE_KEY` (secret, server-only)
+- Required for webhook deletes:
+  - `WHAPI_API_TOKEN` (secret, server-only)
 - Clerk env vars are required by the Clerk SDK but are not referenced in code:
   - UNKNOWN / NEEDS CONFIRMATION: exact env names and values for this project.
 **src/actions/**

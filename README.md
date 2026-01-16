@@ -4,7 +4,7 @@ WhatsAppWatch is a Next.js app for a WhatsApp group moderation service. It provi
 - A marketing site with product messaging.
 - An authenticated admin dashboard to store per-group moderation settings.
 
-This repo is intentionally focused on configuration and management UI. It also includes a minimal Whapi webhook endpoint for rule-based message moderation.
+This repo is intentionally focused on configuration and management UI. It also includes a minimal Whapi webhook endpoint for rule-based message moderation (text, links, phone numbers, and group invites).
 
 ## Who it is for
 - WhatsApp group admins who want automated moderation controls and a clean dashboard to manage rules.
@@ -33,4 +33,4 @@ These must be present or the app will fail at runtime:
 Clerk variables are required to run auth, but are not referenced directly in code. See `ARCHITECTURE.md` for notes on what is UNKNOWN/NEEDS CONFIRMATION.
 
 ## Supabase migrations
-Schema lives in `supabase/migrations/*.sql`. Apply migrations in order (0001 → 0008) in Supabase SQL editor.
+Schema lives in `supabase/migrations/*.sql`. Apply migrations in order (0001 → 0012) in the Supabase SQL editor.

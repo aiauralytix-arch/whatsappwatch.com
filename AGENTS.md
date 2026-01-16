@@ -4,7 +4,8 @@ Guidance for AI agents working on this repo. Keep changes minimal and aligned wi
 
 ## Repo intent
 - Marketing site + authenticated dashboard to configure WhatsApp group moderation settings.
-- No WhatsApp bot, no payments, no analytics pipeline in this codebase.
+- Minimal Whapi webhook moderation (rule-based deletes), not a full WhatsApp bot.
+- No payments, no analytics pipeline in this codebase.
 
 ## Route groups
 - `app/(static)`: marketing pages only.
@@ -19,6 +20,7 @@ Guidance for AI agents working on this repo. Keep changes minimal and aligned wi
 ## Data model rules
 - Update `types/supabase.ts` with every schema change.
 - Add new SQL migrations in `supabase/migrations/` instead of editing old ones.
+  - Recent: `block_group_invites` toggle exists; `spam_protection_enabled` was removed.
 
 ## Caution areas
 - `middleware.ts` controls route protection; keep it lean and auth-focused.

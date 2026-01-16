@@ -11,8 +11,9 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - `moderation_defaults.user_id` is unique; defaults are per user and reused across groups.
 - Migrations are append-only; never edit old migrations in place.
 - Group limit is enforced server-side (50 groups per user). Keep that logic in server actions.
-- Settings arrays (`blocked_keywords`, `admin_phone_numbers`) are stored as Postgres arrays; keep them normalized to avoid duplicates.
+- Settings arrays (`blocked_keywords`, `allowlist_phone_numbers`) are stored as Postgres arrays; keep them normalized to avoid duplicates.
 - `app/layout.tsx` sets `dynamic = "force-dynamic"`; removing it may break auth/session expectations.
+- `moderation_settings` toggles are: `block_phone_numbers`, `block_links`, `block_group_invites`, `block_keywords` (no spam protection flag).
 
 ## Auth & middleware pitfalls
 - Use `auth.protect()` in middleware so Clerk can redirect properly.
@@ -26,6 +27,14 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Subscription fields exist in the database but there is no payment flow.
 - Clerk env vars are required by the SDK but not referenced explicitly in code:
   - UNKNOWN / NEEDS CONFIRMATION: exact env variable names for this deployment.
+- Webhook moderation logic lives in `src/services/moderation/whapi-webhook.service.ts` and is the only place messages are evaluated/deleted.
+
+## Fast lookup (Codex shortcuts)
+- `rg "block_group_invites|block_links|block_phone_numbers|block_keywords" -n src app types`
+- `rg "moderation_settings" -n src supabase/migrations`
+- `rg "whapi" -n src app fixtures`
+- Key files: `src/services/moderation/whapi-webhook.service.ts`, `src/services/moderation/settings.service.ts`, `src/actions/moderation/settings.actions.ts`, `app/dashboard/sections/moderation-toggles-section.tsx`, `types/supabase.ts`
+- Fixtures: `fixtures/whapi-webhook/` (sample payloads for webhook testing)
 
 ## Contribution rules for AI agents
 - Reason first: identify whether a change is server-only, client-only, or cross-boundary.
