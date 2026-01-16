@@ -59,6 +59,22 @@ type SpamEvaluation = {
   matchedKeywords: string[];
 };
 
+const PHONE_DIGIT_MIN = 8;
+const PHONE_DIGIT_MAX = 15;
+const PHONE_CANDIDATE_PATTERN = /(?:\+?\d[\d\s().-]{6,}\d)/g;
+
+const isPhoneNumberLike = (value?: string | null) => {
+  if (!value || typeof value !== "string") return false;
+  const matches = value.match(PHONE_CANDIDATE_PATTERN);
+  if (!matches) return false;
+  return matches.some((match) => {
+    const digits = match.replace(/\D/g, "");
+    return (
+      digits.length >= PHONE_DIGIT_MIN && digits.length <= PHONE_DIGIT_MAX
+    );
+  });
+};
+
 const normalizePhoneDigits = (value?: string | null) => {
   if (!value || typeof value !== "string") return null;
   const digits = value.replace(/[^\d]/g, "");
@@ -142,7 +158,7 @@ const evaluateTextMessageForRuleBasedSpam = (
     lower.includes("https://") ||
     lower.includes("www.");
 
-  const hasNumber = /\d/.test(lower);
+  const hasNumber = isPhoneNumberLike(message);
 
   const matchedKeywords = blockedKeywords.filter((keyword) =>
     lower.includes(keyword),
