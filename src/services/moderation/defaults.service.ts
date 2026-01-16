@@ -135,9 +135,6 @@ export const applyDefaultsToGroups = async (
       block_group_invites:
         current?.block_group_invites ?? defaultSettings.block_group_invites,
       block_keywords: current?.block_keywords ?? defaultSettings.block_keywords,
-      spam_protection_enabled:
-        current?.spam_protection_enabled ??
-        defaultSettings.spam_protection_enabled,
       blocked_keywords: mergeUnique(
         currentKeywords,
         defaults?.blockedKeywords ?? [],

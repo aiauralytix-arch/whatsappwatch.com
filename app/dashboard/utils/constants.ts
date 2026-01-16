@@ -5,5 +5,4 @@ export const defaultToggles = {
   links: true,
   groupInvites: false,
   keywords: true,
-  spamProtection: false,
 };

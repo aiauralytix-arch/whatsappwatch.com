@@ -133,7 +133,6 @@ export const createModerationGroup = async (
           block_links: defaultSettings.block_links,
           block_group_invites: defaultSettings.block_group_invites,
           block_keywords: defaultSettings.block_keywords,
-          spam_protection_enabled: defaultSettings.spam_protection_enabled,
           blocked_keywords: defaults.blockedKeywords,
           allowlist_phone_numbers: defaults.allowlistPhoneNumbers,
         },

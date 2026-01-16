@@ -38,11 +38,6 @@ const toggleItems: Array<{
     label: "Delete messages containing configured keywords",
     description: "Auto-remove content that matches your blocked list.",
   },
-  {
-    id: "spamProtection",
-    label: "Enable spam protection",
-    description: "Use pattern detection to catch repeat offenders.",
-  },
 ];
 
 export default function ModerationTogglesSection({

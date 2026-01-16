@@ -30,7 +30,6 @@ export const mapSettingsRow = (
   blockLinks: row.block_links,
   blockGroupInvites: row.block_group_invites,
   blockKeywords: row.block_keywords,
-  spamProtectionEnabled: row.spam_protection_enabled,
   blockedKeywords: row.blocked_keywords ?? [],
   allowlistPhoneNumbers: row.allowlist_phone_numbers ?? [],
 });

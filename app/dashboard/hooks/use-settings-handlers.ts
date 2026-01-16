@@ -42,7 +42,6 @@ export const useSettingsHandlers = ({
         links: "blockLinks",
         groupInvites: "blockGroupInvites",
         keywords: "blockKeywords",
-        spamProtection: "spamProtectionEnabled",
       } as const;
       void persistSettings({ [mapKey[key]]: value });
     },

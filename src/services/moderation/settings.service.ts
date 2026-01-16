@@ -52,8 +52,6 @@ const buildNextSettings = (
     blockGroupInvites:
       input.blockGroupInvites ?? current?.blockGroupInvites ?? false,
     blockKeywords: input.blockKeywords ?? current?.blockKeywords ?? false,
-    spamProtectionEnabled:
-      input.spamProtectionEnabled ?? current?.spamProtectionEnabled ?? false,
     blockedKeywords: sanitizedKeywords ?? current?.blockedKeywords ?? [],
     allowlistPhoneNumbers:
       sanitizedAllowlistNumbers ?? current?.allowlistPhoneNumbers ?? [],
@@ -79,7 +77,6 @@ export const upsertModerationSettings = async (
         block_links: next.blockLinks,
         block_group_invites: next.blockGroupInvites,
         block_keywords: next.blockKeywords,
-        spam_protection_enabled: next.spamProtectionEnabled,
         blocked_keywords: next.blockedKeywords,
         allowlist_phone_numbers: next.allowlistPhoneNumbers,
       },

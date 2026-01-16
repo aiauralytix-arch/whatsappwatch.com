@@ -30,7 +30,6 @@ export const applyContextState = (
       links: data.settings.blockLinks,
       groupInvites: data.settings.blockGroupInvites,
       keywords: data.settings.blockKeywords,
-      spamProtection: data.settings.spamProtectionEnabled,
     });
     setters.setKeywords(data.settings.blockedKeywords ?? []);
     setters.setAllowlistNumbers(data.settings.allowlistPhoneNumbers ?? []);

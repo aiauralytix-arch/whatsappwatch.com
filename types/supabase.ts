@@ -43,7 +43,6 @@ export type ModerationSettingsRow = {
   block_links: boolean;
   block_group_invites: boolean;
   block_keywords: boolean;
-  spam_protection_enabled: boolean;
   blocked_keywords: string[];
   allowlist_phone_numbers: string[];
 };
@@ -55,7 +54,6 @@ export type ModerationSettings = {
   blockLinks: boolean;
   blockGroupInvites: boolean;
   blockKeywords: boolean;
-  spamProtectionEnabled: boolean;
   blockedKeywords: string[];
   allowlistPhoneNumbers: string[];
 };
@@ -65,7 +63,6 @@ export type ModerationSettingsInput = {
   blockLinks?: boolean;
   blockGroupInvites?: boolean;
   blockKeywords?: boolean;
-  spamProtectionEnabled?: boolean;
   blockedKeywords?: string[];
   allowlistPhoneNumbers?: string[];
 };

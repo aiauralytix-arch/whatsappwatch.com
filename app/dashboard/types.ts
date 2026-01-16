@@ -6,7 +6,6 @@ export type ToggleState = {
   links: boolean;
   groupInvites: boolean;
   keywords: boolean;
-  spamProtection: boolean;
 };
 
 export type DashboardState = {
