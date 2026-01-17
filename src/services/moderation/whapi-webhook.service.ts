@@ -137,49 +137,49 @@ const extractModerationMessagesFromWhatsappPayload = (
     .filter((message) => Boolean(message.id))
     .flatMap<WhatsappModerationMessage>(
       (message): WhatsappModerationMessage[] => {
-      const groupId = extractGroupId(message);
-      const senderId = extractSenderId(message);
-      const timestamp =
-        typeof message.timestamp === "number" ? message.timestamp : null;
+        const groupId = extractGroupId(message);
+        const senderId = extractSenderId(message);
+        const timestamp =
+          typeof message.timestamp === "number" ? message.timestamp : null;
 
-      if (message.type === "text" && message.text?.body) {
-        return [
-          {
-            id: message.id as string,
-            type: "text",
-            text: message.text.body,
-            inviteUrl: null,
-            groupId,
-            senderId,
-            timestamp,
-          },
-        ];
-      }
+        if (message.type === "text" && message.text?.body) {
+          return [
+            {
+              id: message.id as string,
+              type: "text",
+              text: message.text.body,
+              inviteUrl: null,
+              groupId,
+              senderId,
+              timestamp,
+            },
+          ];
+        }
 
-      if (message.type === "group_invite") {
-        const inviteText =
-          message.group_invite?.body ??
-          message.group_invite?.url ??
-          message.group_invite?.title ??
-          "Group invite";
-        const inviteUrl =
-          message.group_invite?.url ?? message.group_invite?.body ?? null;
+        if (message.type === "group_invite") {
+          const inviteText =
+            message.group_invite?.body ??
+            message.group_invite?.url ??
+            message.group_invite?.title ??
+            "Group invite";
+          const inviteUrl =
+            message.group_invite?.url ?? message.group_invite?.body ?? null;
 
-        return [
-          {
-            id: message.id as string,
-            type: "group_invite",
-            text: inviteText,
-            inviteUrl,
-            groupId,
-            senderId,
-            timestamp,
-          },
-        ];
-      }
+          return [
+            {
+              id: message.id as string,
+              type: "group_invite",
+              text: inviteText,
+              inviteUrl,
+              groupId,
+              senderId,
+              timestamp,
+            },
+          ];
+        }
 
-      return [];
-    },
+        return [];
+      },
     );
 };
 
@@ -226,9 +226,9 @@ const evaluateTextMessageForRuleBasedSpam = (
   const lower = message.toLowerCase();
 
   const hasUrl =
-    lower.includes("http://") ||
-    lower.includes("https://") ||
-    lower.includes("www.");
+    /\bhttps?\b/i.test(message) || // http or https (any case, no "://" needed)
+    /\bwww\b/i.test(message) || // bare www
+    /\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/i.test(message); // example.com, sub.domain.co.uk, my-site.io
 
   const hasNumber = isPhoneNumberLike(message);
 
