@@ -16,6 +16,12 @@ type WhatsappWebhookMessage = {
   type?: string;
   text?: { body?: string };
   image?: { caption?: string };
+  link_preview?: {
+    body?: string;
+    url?: string;
+    title?: string;
+    description?: string;
+  };
   group_invite?: { body?: string; url?: string; title?: string };
   chat_id?: string;
   chatId?: string;
@@ -171,6 +177,28 @@ const extractModerationMessagesFromWhatsappPayload = (
               type: "group_invite",
               text: inviteText,
               inviteUrl,
+              groupId,
+              senderId,
+              timestamp,
+            },
+          ];
+        }
+
+        if (message.type === "link_preview") {
+          const linkParts = [
+            message.link_preview?.body,
+            message.link_preview?.url,
+            message.link_preview?.title,
+            message.link_preview?.description,
+          ].filter((entry): entry is string => Boolean(entry));
+          const linkText = linkParts.length > 0 ? linkParts.join(" ") : "Link";
+
+          return [
+            {
+              id: message.id as string,
+              type: "text",
+              text: linkText,
+              inviteUrl: null,
               groupId,
               senderId,
               timestamp,

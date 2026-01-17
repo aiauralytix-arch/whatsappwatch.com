@@ -1,0 +1,26 @@
+{
+  "messages": [
+    {
+      "id": "rEXXErf4AwaJ0A6H..1buw-grgBq52NVzTWyQ",
+      "from_me": false,
+      "type": "link_preview",
+      "chat_id": "120363045434480329@g.us",
+      "timestamp": 1768673224,
+      "source": "mobile",
+      "chat_name": "Lift m chat",
+      "link_preview": {
+        "body": "Https://tiktok.com",
+        "url": "Https://tiktok.com",
+        "title": "About | TikTok",
+        "description": "TikTok is the world's leading destination for short-form mobile videos. Our mission is to capture and present the world's creativity, knowledge, and moments that matter in everyday life. TikTok empowers everyone to be a creator directly from their smartphones, and is committed to building a community by encouraging users to share their passion and creative expression through their videos."
+      },
+      "from": "917011460487",
+      "from_name": "Apoorv jain"
+    }
+  ],
+  "event": {
+    "type": "messages",
+    "event": "post"
+  },
+  "channel_id": "MANTIS-FSX25"
+}
