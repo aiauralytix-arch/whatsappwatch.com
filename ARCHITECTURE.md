@@ -66,7 +66,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - One row per group (`group_id` is unique + not null).
 - Stores moderation toggles and arrays for keywords/allowlist numbers.
 - `group_id` has a foreign key to `moderation_groups`.
-  - Current toggles: `block_phone_numbers`, `block_links`, `block_group_invites`, `block_keywords`.
+  - Current toggles: `block_phone_numbers`, `block_links`, `block_group_invites`, `block_keywords` (applies to text and link previews).
 
 **moderation_defaults**
 - One row per user (`user_id` is unique).

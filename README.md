@@ -4,7 +4,7 @@ WhatsAppWatch is a Next.js app for a WhatsApp group moderation service. It provi
 - A marketing site with product messaging.
 - An authenticated admin dashboard to store per-group moderation settings.
 
-This repo is intentionally focused on configuration and management UI. It also includes a minimal Whapi webhook endpoint for rule-based message moderation (text, links, phone numbers, and group invites).
+This repo is intentionally focused on configuration and management UI. It also includes a minimal Whapi webhook endpoint for rule-based message moderation (text, link previews, links, phone numbers, and group invites).
 
 ## Who it is for
 - WhatsApp group admins who want automated moderation controls and a clean dashboard to manage rules.
