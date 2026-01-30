@@ -29,6 +29,7 @@ export const applyContextState = (
       phoneNumbers: data.settings.blockPhoneNumbers,
       links: data.settings.blockLinks,
       groupInvites: data.settings.blockGroupInvites,
+      contacts: data.settings.blockContacts,
       keywords: data.settings.blockKeywords,
     });
     setters.setKeywords(data.settings.blockedKeywords ?? []);

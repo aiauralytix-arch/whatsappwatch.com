@@ -134,6 +134,8 @@ export const applyDefaultsToGroups = async (
       block_links: current?.block_links ?? defaultSettings.block_links,
       block_group_invites:
         current?.block_group_invites ?? defaultSettings.block_group_invites,
+      block_contacts:
+        current?.block_contacts ?? defaultSettings.block_contacts,
       block_keywords: current?.block_keywords ?? defaultSettings.block_keywords,
       blocked_keywords: mergeUnique(
         currentKeywords,

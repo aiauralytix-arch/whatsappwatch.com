@@ -34,6 +34,11 @@ const toggleItems: Array<{
     description: "Block shared invite links to other groups.",
   },
   {
+    id: "contacts",
+    label: "Delete messages sharing WhatsApp contacts",
+    description: "Remove shared contact cards (vCards) from the group.",
+  },
+  {
     id: "keywords",
     label: "Delete messages containing configured keywords",
     description: "Auto-remove content that matches your blocked list.",

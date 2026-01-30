@@ -3,7 +3,7 @@ import { defaultSettings } from "@/src/lib/moderation/settings-constants";
 
 type WhatsappModerationMessage = {
   id: string;
-  type: "text" | "group_invite";
+  type: "text" | "group_invite" | "contact";
   text: string;
   inviteUrl: string | null;
   groupId: string | null;
@@ -23,6 +23,7 @@ type WhatsappWebhookMessage = {
     description?: string;
   };
   group_invite?: { body?: string; url?: string; title?: string };
+  contact?: { name?: string; vcard?: string };
   chat_id?: string;
   chatId?: string;
   chat?: { id?: string };
@@ -63,6 +64,7 @@ type GroupModerationConfig = {
   blockPhoneNumbers: boolean;
   blockLinks: boolean;
   blockGroupInvites: boolean;
+  blockContacts: boolean;
   blockKeywords: boolean;
 };
 
@@ -77,6 +79,7 @@ type RuleBasedFlags = {
   blockPhoneNumbers: boolean;
   blockLinks: boolean;
   blockGroupInvites: boolean;
+  blockContacts: boolean;
   blockKeywords: boolean;
 };
 
@@ -129,6 +132,22 @@ const extractSenderId = (message: WhatsappWebhookMessage) => {
   if (message.from_id) return message.from_id;
   if (message.from && !message.from.includes("@g.us")) return message.from;
   return null;
+};
+
+const extractContactPhone = (vcard?: string) => {
+  if (!vcard || typeof vcard !== "string") return null;
+  const match = vcard.match(/TEL[^:]*:([^\n\r]+)/i);
+  return match?.[1]?.trim() ?? null;
+};
+
+const buildContactText = (contact?: { name?: string; vcard?: string }) => {
+  const name = contact?.name?.trim();
+  const phone = extractContactPhone(contact?.vcard);
+
+  if (name && phone) return `Shared contact: ${name} (${phone})`;
+  if (name) return `Shared contact: ${name}`;
+  if (phone) return `Shared contact: ${phone}`;
+  return "Shared contact";
 };
 
 const extractModerationMessagesFromWhatsappPayload = (
@@ -206,6 +225,20 @@ const extractModerationMessagesFromWhatsappPayload = (
           ];
         }
 
+        if (message.type === "contact") {
+          return [
+            {
+              id: message.id as string,
+              type: "contact",
+              text: buildContactText(message.contact),
+              inviteUrl: null,
+              groupId,
+              senderId,
+              timestamp,
+            },
+          ];
+        }
+
         return [];
       },
     );
@@ -225,6 +258,7 @@ const getRuleBasedFlags = (
       blockPhoneNumbers: defaultSettings.block_phone_numbers,
       blockLinks: defaultSettings.block_links,
       blockGroupInvites: defaultSettings.block_group_invites,
+      blockContacts: defaultSettings.block_contacts,
       blockKeywords: defaultSettings.block_keywords,
     };
   }
@@ -233,6 +267,7 @@ const getRuleBasedFlags = (
     blockPhoneNumbers: config.blockPhoneNumbers,
     blockLinks: config.blockLinks,
     blockGroupInvites: config.blockGroupInvites,
+    blockContacts: config.blockContacts,
     blockKeywords: config.blockKeywords,
   };
 };
@@ -292,6 +327,15 @@ const evaluateModerationMessageForSpam = (
       isSpam: flags.blockGroupInvites,
       hasUrl,
       hasNumber: false,
+      matchedKeywords: [],
+    };
+  }
+
+  if (message.type === "contact") {
+    return {
+      isSpam: flags.blockContacts,
+      hasUrl: false,
+      hasNumber: isPhoneNumberLike(message.text),
       matchedKeywords: [],
     };
   }
@@ -376,7 +420,7 @@ const fetchModerationConfigByWhapiGroupId = async (
   const { data: settingsRows, error: settingsError } = await supabase
     .from("moderation_settings")
     .select(
-      "group_id, allowlist_phone_numbers, blocked_keywords, block_phone_numbers, block_links, block_group_invites, block_keywords",
+      "group_id, allowlist_phone_numbers, blocked_keywords, block_phone_numbers, block_links, block_group_invites, block_contacts, block_keywords",
     )
     .in("group_id", groupIds);
 
@@ -392,6 +436,7 @@ const fetchModerationConfigByWhapiGroupId = async (
       block_phone_numbers?: boolean;
       block_links?: boolean;
       block_group_invites?: boolean;
+      block_contacts?: boolean;
       block_keywords?: boolean;
     }
   >();
@@ -402,6 +447,7 @@ const fetchModerationConfigByWhapiGroupId = async (
       block_phone_numbers: row.block_phone_numbers ?? false,
       block_links: row.block_links ?? false,
       block_group_invites: row.block_group_invites ?? false,
+      block_contacts: row.block_contacts ?? false,
       block_keywords: row.block_keywords ?? false,
     });
   }
@@ -424,6 +470,8 @@ const fetchModerationConfigByWhapiGroupId = async (
       blockLinks: settings?.block_links ?? defaultSettings.block_links,
       blockGroupInvites:
         settings?.block_group_invites ?? defaultSettings.block_group_invites,
+      blockContacts:
+        settings?.block_contacts ?? defaultSettings.block_contacts,
       blockKeywords: settings?.block_keywords ?? defaultSettings.block_keywords,
     });
   }

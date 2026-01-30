@@ -5,6 +5,7 @@ export type ToggleState = {
   phoneNumbers: boolean;
   links: boolean;
   groupInvites: boolean;
+  contacts: boolean;
   keywords: boolean;
 };
 

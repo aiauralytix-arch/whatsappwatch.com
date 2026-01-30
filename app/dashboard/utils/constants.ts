@@ -4,5 +4,6 @@ export const defaultToggles = {
   phoneNumbers: true,
   links: true,
   groupInvites: false,
+  contacts: false,
   keywords: true,
 };

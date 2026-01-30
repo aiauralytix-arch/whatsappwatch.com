@@ -1,0 +1,25 @@
+{
+  "messages": [
+    {
+      "id": "PrCYhWzkqb14fhQ-gkMBq52NVzTWyQ",
+      "from_me": false,
+      "type": "contact",
+      "chat_id": "120363045434480329@g.us",
+      "timestamp": 1769785477,
+      "source": "web",
+      "device_id": 78,
+      "chat_name": "Lift m chat",
+      "contact": {
+        "name": "Apoorv jain",
+        "vcard": "BEGIN:VCARD\nVERSION:3.0\nN:;Apoorv jain;;;\nFN:Apoorv jain\nTEL;type=CELL;waid=917011460487:+91 70114 60487\nEND:VCARD"
+      },
+      "from": "917011460487",
+      "from_name": "Apoorv jain"
+    }
+  ],
+  "event": {
+    "type": "messages",
+    "event": "post"
+  },
+  "channel_id": "MANTIS-FSX25"
+}

@@ -42,6 +42,7 @@ export type ModerationSettingsRow = {
   block_phone_numbers: boolean;
   block_links: boolean;
   block_group_invites: boolean;
+  block_contacts: boolean;
   block_keywords: boolean;
   blocked_keywords: string[];
   allowlist_phone_numbers: string[];
@@ -53,6 +54,7 @@ export type ModerationSettings = {
   blockPhoneNumbers: boolean;
   blockLinks: boolean;
   blockGroupInvites: boolean;
+  blockContacts: boolean;
   blockKeywords: boolean;
   blockedKeywords: string[];
   allowlistPhoneNumbers: string[];
@@ -62,6 +64,7 @@ export type ModerationSettingsInput = {
   blockPhoneNumbers?: boolean;
   blockLinks?: boolean;
   blockGroupInvites?: boolean;
+  blockContacts?: boolean;
   blockKeywords?: boolean;
   blockedKeywords?: string[];
   allowlistPhoneNumbers?: string[];
