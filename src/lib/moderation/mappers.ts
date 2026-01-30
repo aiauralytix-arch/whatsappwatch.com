@@ -31,6 +31,7 @@ export const mapSettingsRow = (
   blockGroupInvites: row.block_group_invites,
   blockContacts: row.block_contacts,
   blockVideos: row.block_videos,
+  blockImages: row.block_images,
   blockKeywords: row.block_keywords,
   blockedKeywords: row.blocked_keywords ?? [],
   allowlistPhoneNumbers: row.allowlist_phone_numbers ?? [],

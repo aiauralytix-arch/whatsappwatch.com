@@ -7,6 +7,7 @@ export type ToggleState = {
   groupInvites: boolean;
   contacts: boolean;
   videos: boolean;
+  images: boolean;
   keywords: boolean;
 };
 

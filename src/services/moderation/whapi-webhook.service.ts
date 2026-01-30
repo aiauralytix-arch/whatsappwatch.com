@@ -3,7 +3,7 @@ import { defaultSettings } from "@/src/lib/moderation/settings-constants";
 
 type WhatsappModerationMessage = {
   id: string;
-  type: "text" | "group_invite" | "contact" | "video";
+  type: "text" | "group_invite" | "contact" | "video" | "image";
   text: string;
   inviteUrl: string | null;
   groupId: string | null;
@@ -15,7 +15,6 @@ type WhatsappWebhookMessage = {
   id?: string;
   type?: string;
   text?: { body?: string };
-  image?: { caption?: string };
   link_preview?: {
     body?: string;
     url?: string;
@@ -25,6 +24,7 @@ type WhatsappWebhookMessage = {
   group_invite?: { body?: string; url?: string; title?: string };
   contact?: { name?: string; vcard?: string };
   video?: { caption?: string };
+  image?: { caption?: string };
   chat_id?: string;
   chatId?: string;
   chat?: { id?: string };
@@ -67,6 +67,7 @@ type GroupModerationConfig = {
   blockGroupInvites: boolean;
   blockContacts: boolean;
   blockVideos: boolean;
+  blockImages: boolean;
   blockKeywords: boolean;
 };
 
@@ -83,6 +84,7 @@ type RuleBasedFlags = {
   blockGroupInvites: boolean;
   blockContacts: boolean;
   blockVideos: boolean;
+  blockImages: boolean;
   blockKeywords: boolean;
 };
 
@@ -157,6 +159,12 @@ const buildVideoText = (video?: { caption?: string }) => {
   const caption = video?.caption?.trim();
   if (caption) return `Video: ${caption}`;
   return "Video";
+};
+
+const buildImageText = (image?: { caption?: string }) => {
+  const caption = image?.caption?.trim();
+  if (caption) return `Image: ${caption}`;
+  return "Image";
 };
 
 const extractModerationMessagesFromWhatsappPayload = (
@@ -262,6 +270,20 @@ const extractModerationMessagesFromWhatsappPayload = (
           ];
         }
 
+        if (message.type === "image") {
+          return [
+            {
+              id: message.id as string,
+              type: "image",
+              text: buildImageText(message.image),
+              inviteUrl: null,
+              groupId,
+              senderId,
+              timestamp,
+            },
+          ];
+        }
+
         return [];
       },
     );
@@ -283,6 +305,7 @@ const getRuleBasedFlags = (
       blockGroupInvites: defaultSettings.block_group_invites,
       blockContacts: defaultSettings.block_contacts,
       blockVideos: defaultSettings.block_videos,
+      blockImages: defaultSettings.block_images,
       blockKeywords: defaultSettings.block_keywords,
     };
   }
@@ -293,6 +316,7 @@ const getRuleBasedFlags = (
     blockGroupInvites: config.blockGroupInvites,
     blockContacts: config.blockContacts,
     blockVideos: config.blockVideos,
+    blockImages: config.blockImages,
     blockKeywords: config.blockKeywords,
   };
 };
@@ -368,6 +392,15 @@ const evaluateModerationMessageForSpam = (
   if (message.type === "video") {
     return {
       isSpam: flags.blockVideos,
+      hasUrl: false,
+      hasNumber: false,
+      matchedKeywords: [],
+    };
+  }
+
+  if (message.type === "image") {
+    return {
+      isSpam: flags.blockImages,
       hasUrl: false,
       hasNumber: false,
       matchedKeywords: [],
@@ -454,7 +487,7 @@ const fetchModerationConfigByWhapiGroupId = async (
   const { data: settingsRows, error: settingsError } = await supabase
     .from("moderation_settings")
     .select(
-      "group_id, allowlist_phone_numbers, blocked_keywords, block_phone_numbers, block_links, block_group_invites, block_contacts, block_videos, block_keywords",
+      "group_id, allowlist_phone_numbers, blocked_keywords, block_phone_numbers, block_links, block_group_invites, block_contacts, block_videos, block_images, block_keywords",
     )
     .in("group_id", groupIds);
 
@@ -472,6 +505,7 @@ const fetchModerationConfigByWhapiGroupId = async (
       block_group_invites?: boolean;
       block_contacts?: boolean;
       block_videos?: boolean;
+      block_images?: boolean;
       block_keywords?: boolean;
     }
   >();
@@ -484,6 +518,7 @@ const fetchModerationConfigByWhapiGroupId = async (
       block_group_invites: row.block_group_invites ?? false,
       block_contacts: row.block_contacts ?? false,
       block_videos: row.block_videos ?? false,
+      block_images: row.block_images ?? false,
       block_keywords: row.block_keywords ?? false,
     });
   }
@@ -509,6 +544,7 @@ const fetchModerationConfigByWhapiGroupId = async (
       blockContacts:
         settings?.block_contacts ?? defaultSettings.block_contacts,
       blockVideos: settings?.block_videos ?? defaultSettings.block_videos,
+      blockImages: settings?.block_images ?? defaultSettings.block_images,
       blockKeywords: settings?.block_keywords ?? defaultSettings.block_keywords,
     });
   }

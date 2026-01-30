@@ -53,6 +53,7 @@ const buildNextSettings = (
       input.blockGroupInvites ?? current?.blockGroupInvites ?? false,
     blockContacts: input.blockContacts ?? current?.blockContacts ?? false,
     blockVideos: input.blockVideos ?? current?.blockVideos ?? false,
+    blockImages: input.blockImages ?? current?.blockImages ?? false,
     blockKeywords: input.blockKeywords ?? current?.blockKeywords ?? false,
     blockedKeywords: sanitizedKeywords ?? current?.blockedKeywords ?? [],
     allowlistPhoneNumbers:
@@ -80,6 +81,7 @@ export const upsertModerationSettings = async (
         block_group_invites: next.blockGroupInvites,
         block_contacts: next.blockContacts,
         block_videos: next.blockVideos,
+        block_images: next.blockImages,
         block_keywords: next.blockKeywords,
         blocked_keywords: next.blockedKeywords,
         allowlist_phone_numbers: next.allowlistPhoneNumbers,

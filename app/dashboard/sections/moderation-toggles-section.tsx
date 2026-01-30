@@ -44,6 +44,11 @@ const toggleItems: Array<{
     description: "Remove shared video files from the group.",
   },
   {
+    id: "images",
+    label: "Delete messages containing images",
+    description: "Remove shared photos from the group.",
+  },
+  {
     id: "keywords",
     label: "Delete messages containing configured keywords",
     description: "Auto-remove content that matches your blocked list.",

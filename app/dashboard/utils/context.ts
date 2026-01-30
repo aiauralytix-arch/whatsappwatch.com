@@ -31,6 +31,7 @@ export const applyContextState = (
       groupInvites: data.settings.blockGroupInvites,
       contacts: data.settings.blockContacts,
       videos: data.settings.blockVideos,
+      images: data.settings.blockImages,
       keywords: data.settings.blockKeywords,
     });
     setters.setKeywords(data.settings.blockedKeywords ?? []);

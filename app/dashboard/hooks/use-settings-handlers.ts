@@ -43,6 +43,7 @@ export const useSettingsHandlers = ({
         groupInvites: "blockGroupInvites",
         contacts: "blockContacts",
         videos: "blockVideos",
+        images: "blockImages",
         keywords: "blockKeywords",
       } as const;
       void persistSettings({ [mapKey[key]]: value });

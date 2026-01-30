@@ -134,6 +134,7 @@ export const createModerationGroup = async (
           block_group_invites: defaultSettings.block_group_invites,
           block_contacts: defaultSettings.block_contacts,
           block_videos: defaultSettings.block_videos,
+          block_images: defaultSettings.block_images,
           block_keywords: defaultSettings.block_keywords,
           blocked_keywords: defaults.blockedKeywords,
           allowlist_phone_numbers: defaults.allowlistPhoneNumbers,
