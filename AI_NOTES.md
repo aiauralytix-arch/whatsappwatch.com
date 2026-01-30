@@ -13,7 +13,7 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Group limit is enforced server-side (50 groups per user). Keep that logic in server actions.
 - Settings arrays (`blocked_keywords`, `allowlist_phone_numbers`) are stored as Postgres arrays; keep them normalized to avoid duplicates.
 - `app/layout.tsx` sets `dynamic = "force-dynamic"`; removing it may break auth/session expectations.
-- `moderation_settings` toggles are: `block_phone_numbers`, `block_links`, `block_group_invites`, `block_keywords` (no spam protection flag).
+- `moderation_settings` toggles are: `block_phone_numbers`, `block_links`, `block_group_invites`, `block_contacts`, `block_videos`, `block_images`, `block_keywords` (no spam protection flag).
 
 ## Auth & middleware pitfalls
 - Use `auth.protect()` in middleware so Clerk can redirect properly.
@@ -30,7 +30,7 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Webhook moderation logic lives in `src/services/moderation/whapi-webhook.service.ts` and is the only place messages are evaluated/deleted.
 
 ## Fast lookup (Codex shortcuts)
-- `rg "block_group_invites|block_links|block_phone_numbers|block_keywords" -n src app types`
+- `rg "block_group_invites|block_links|block_phone_numbers|block_contacts|block_videos|block_images|block_keywords" -n src app types`
 - `rg "moderation_settings" -n src supabase/migrations`
 - `rg "whapi" -n src app fixtures`
 - Key files: `src/services/moderation/whapi-webhook.service.ts`, `src/services/moderation/settings.service.ts`, `src/actions/moderation/settings.actions.ts`, `app/dashboard/sections/moderation-toggles-section.tsx`, `types/supabase.ts`
