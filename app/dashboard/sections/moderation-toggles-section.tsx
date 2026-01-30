@@ -39,6 +39,11 @@ const toggleItems: Array<{
     description: "Remove shared contact cards (vCards) from the group.",
   },
   {
+    id: "videos",
+    label: "Delete messages containing videos",
+    description: "Remove shared video files from the group.",
+  },
+  {
     id: "keywords",
     label: "Delete messages containing configured keywords",
     description: "Auto-remove content that matches your blocked list.",

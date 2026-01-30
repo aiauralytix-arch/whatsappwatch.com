@@ -1,0 +1,31 @@
+{
+  "messages": [
+    {
+      "id": "PrBsWHLt2gj.05Y-gs4Bq52NVzTWyQ",
+      "from_me": false,
+      "type": "video",
+      "chat_id": "120363045434480329@g.us",
+      "timestamp": 1769790523,
+      "source": "web",
+      "device_id": 78,
+      "chat_name": "Lift m chat",
+      "video": {
+        "id": "mp4-3eb06c5872edda08fed396-82ce01ab9d8d5734d6c9",
+        "mime_type": "video/mp4",
+        "file_size": 648638,
+        "sha256": "UEFSHHfE1MfRHwWe1lA0aEjrY4P9NKznFLSU35f5H+Q=",
+        "width": 768,
+        "height": 1168,
+        "seconds": 4,
+        "preview": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAQaADAAQAAAABAAAAZAAAAAD/wAARCABkAEEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAF/9oADAMBAAIRAxEAPwD+f+iiigAooooAKKKKACiiigAooooA/9D+f+iiigAooooAKKKKACiiigAooooA/9H+f+iiigAooooAKKKKACiiigAooooA/9L+f+iiigAooooAKKKKACiiigAooooA/9P+f+iiigAooooAKKKKACiiigAooooA/9T+f+iiigAooooAKKKKACiiigAooooA/9X+f+iiigAooooAKKKKACiiigAooooA/9k="
+      },
+      "from": "917011460487",
+      "from_name": "Apoorv jain"
+    }
+  ],
+  "event": {
+    "type": "messages",
+    "event": "post"
+  },
+  "channel_id": "MANTIS-FSX25"
+}

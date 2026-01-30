@@ -5,5 +5,6 @@ export const defaultToggles = {
   links: true,
   groupInvites: false,
   contacts: false,
+  videos: false,
   keywords: true,
 };

@@ -136,6 +136,7 @@ export const applyDefaultsToGroups = async (
         current?.block_group_invites ?? defaultSettings.block_group_invites,
       block_contacts:
         current?.block_contacts ?? defaultSettings.block_contacts,
+      block_videos: current?.block_videos ?? defaultSettings.block_videos,
       block_keywords: current?.block_keywords ?? defaultSettings.block_keywords,
       blocked_keywords: mergeUnique(
         currentKeywords,

@@ -3,7 +3,7 @@ import { defaultSettings } from "@/src/lib/moderation/settings-constants";
 
 type WhatsappModerationMessage = {
   id: string;
-  type: "text" | "group_invite" | "contact";
+  type: "text" | "group_invite" | "contact" | "video";
   text: string;
   inviteUrl: string | null;
   groupId: string | null;
@@ -24,6 +24,7 @@ type WhatsappWebhookMessage = {
   };
   group_invite?: { body?: string; url?: string; title?: string };
   contact?: { name?: string; vcard?: string };
+  video?: { caption?: string };
   chat_id?: string;
   chatId?: string;
   chat?: { id?: string };
@@ -65,6 +66,7 @@ type GroupModerationConfig = {
   blockLinks: boolean;
   blockGroupInvites: boolean;
   blockContacts: boolean;
+  blockVideos: boolean;
   blockKeywords: boolean;
 };
 
@@ -80,6 +82,7 @@ type RuleBasedFlags = {
   blockLinks: boolean;
   blockGroupInvites: boolean;
   blockContacts: boolean;
+  blockVideos: boolean;
   blockKeywords: boolean;
 };
 
@@ -148,6 +151,12 @@ const buildContactText = (contact?: { name?: string; vcard?: string }) => {
   if (name) return `Shared contact: ${name}`;
   if (phone) return `Shared contact: ${phone}`;
   return "Shared contact";
+};
+
+const buildVideoText = (video?: { caption?: string }) => {
+  const caption = video?.caption?.trim();
+  if (caption) return `Video: ${caption}`;
+  return "Video";
 };
 
 const extractModerationMessagesFromWhatsappPayload = (
@@ -239,6 +248,20 @@ const extractModerationMessagesFromWhatsappPayload = (
           ];
         }
 
+        if (message.type === "video") {
+          return [
+            {
+              id: message.id as string,
+              type: "video",
+              text: buildVideoText(message.video),
+              inviteUrl: null,
+              groupId,
+              senderId,
+              timestamp,
+            },
+          ];
+        }
+
         return [];
       },
     );
@@ -259,6 +282,7 @@ const getRuleBasedFlags = (
       blockLinks: defaultSettings.block_links,
       blockGroupInvites: defaultSettings.block_group_invites,
       blockContacts: defaultSettings.block_contacts,
+      blockVideos: defaultSettings.block_videos,
       blockKeywords: defaultSettings.block_keywords,
     };
   }
@@ -268,6 +292,7 @@ const getRuleBasedFlags = (
     blockLinks: config.blockLinks,
     blockGroupInvites: config.blockGroupInvites,
     blockContacts: config.blockContacts,
+    blockVideos: config.blockVideos,
     blockKeywords: config.blockKeywords,
   };
 };
@@ -336,6 +361,15 @@ const evaluateModerationMessageForSpam = (
       isSpam: flags.blockContacts,
       hasUrl: false,
       hasNumber: isPhoneNumberLike(message.text),
+      matchedKeywords: [],
+    };
+  }
+
+  if (message.type === "video") {
+    return {
+      isSpam: flags.blockVideos,
+      hasUrl: false,
+      hasNumber: false,
       matchedKeywords: [],
     };
   }
@@ -420,7 +454,7 @@ const fetchModerationConfigByWhapiGroupId = async (
   const { data: settingsRows, error: settingsError } = await supabase
     .from("moderation_settings")
     .select(
-      "group_id, allowlist_phone_numbers, blocked_keywords, block_phone_numbers, block_links, block_group_invites, block_contacts, block_keywords",
+      "group_id, allowlist_phone_numbers, blocked_keywords, block_phone_numbers, block_links, block_group_invites, block_contacts, block_videos, block_keywords",
     )
     .in("group_id", groupIds);
 
@@ -437,6 +471,7 @@ const fetchModerationConfigByWhapiGroupId = async (
       block_links?: boolean;
       block_group_invites?: boolean;
       block_contacts?: boolean;
+      block_videos?: boolean;
       block_keywords?: boolean;
     }
   >();
@@ -448,6 +483,7 @@ const fetchModerationConfigByWhapiGroupId = async (
       block_links: row.block_links ?? false,
       block_group_invites: row.block_group_invites ?? false,
       block_contacts: row.block_contacts ?? false,
+      block_videos: row.block_videos ?? false,
       block_keywords: row.block_keywords ?? false,
     });
   }
@@ -472,6 +508,7 @@ const fetchModerationConfigByWhapiGroupId = async (
         settings?.block_group_invites ?? defaultSettings.block_group_invites,
       blockContacts:
         settings?.block_contacts ?? defaultSettings.block_contacts,
+      blockVideos: settings?.block_videos ?? defaultSettings.block_videos,
       blockKeywords: settings?.block_keywords ?? defaultSettings.block_keywords,
     });
   }
