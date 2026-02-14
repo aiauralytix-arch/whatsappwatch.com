@@ -404,7 +404,7 @@ export default function GroupsSection({
           <CardTitle>Groups</CardTitle>
           <CardDescription>
             Group name should match the WhatsApp group name as closely as
-            possible for verification. Subscription is Rs 299 per group.
+            possible for verification.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -473,14 +473,9 @@ export default function GroupsSection({
               <p className="text-xs uppercase tracking-[0.2em] text-[#9a948b]">
                 Active group
               </p>
-              <p className="mt-2 text-sm text-[#161616]">
-                {activeGroup.groupName ??
-                  activeGroup.groupLink ??
-                  "Untitled group"}
-              </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant="soft">Rs {activeGroup.subscriptionPriceInr}</Badge>
-                <Badge
+                {/* <Badge variant="soft">Rs {activeGroup.subscriptionPriceInr}</Badge> */}
+                {/* <Badge
                   variant={
                     activeGroup.subscriptionStatus === "active"
                       ? "dark"
@@ -488,14 +483,14 @@ export default function GroupsSection({
                   }
                 >
                   {activeGroup.subscriptionStatus}
-                </Badge>
+                </Badge> */}
                 <Badge variant={isActiveVerified ? "dark" : "soft"}>
                   {isActiveVerified ? "verified" : "not verified"}
                 </Badge>
               </div>
-              <p className="mt-2 text-xs text-[#6b6b6b]">
+              {/* <p className="mt-2 text-xs text-[#6b6b6b]">
                 Payments coming soon.
-              </p>
+              </p> */}
               <div className="mt-4 space-y-3">
                 <Input
                   placeholder="Update group name (required)"
