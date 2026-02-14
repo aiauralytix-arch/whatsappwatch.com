@@ -1,16 +1,13 @@
 "use client";
 
 import HeaderSection from "@/app/dashboard/sections/header-section";
-import SetupSection from "@/app/dashboard/sections/setup-section";
 import PhoneVerificationSection from "@/app/dashboard/sections/phone-verification-section";
-import TutorialSection from "@/app/dashboard/sections/tutorial-section";
 import GroupsSection from "@/app/dashboard/sections/groups-section";
 import SharedDefaultsSection from "@/app/dashboard/sections/shared-defaults-section";
 import ModerationTogglesSection from "@/app/dashboard/sections/moderation-toggles-section";
 import AllowlistSection from "@/app/dashboard/sections/allowlist-section";
 import KeywordSection from "@/app/dashboard/sections/keyword-section";
 import DeletedMessagesSection from "@/app/dashboard/sections/deleted-messages-section";
-import AnalyticsSection from "@/app/dashboard/sections/analytics-section";
 import FooterSection from "@/app/dashboard/sections/footer-section";
 import { useDashboardState } from "@/app/dashboard/hooks/use-dashboard-state";
 import { useGroupHandlers } from "@/app/dashboard/hooks/use-group-handlers";
@@ -65,9 +62,7 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-24 pt-16 sm:px-10 lg:px-16">
         <HeaderSection userName={userName} userEmail={userEmail} />
-        <SetupSection />
         <PhoneVerificationSection />
-        <TutorialSection />
         <GroupsSection
           newGroupName={state.newGroupName}
           newGroupLink={state.newGroupLink}
@@ -135,7 +130,6 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
           isLoading={deletedMessages.isLoading}
           groupName={activeGroup?.groupName ?? activeGroup?.groupLink}
         />
-        <AnalyticsSection />
         <FooterSection isSyncing={state.isSyncing} />
       </main>
     </div>

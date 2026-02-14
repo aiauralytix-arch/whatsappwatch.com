@@ -12,7 +12,7 @@ This repo is intentionally focused on configuration and management UI. It also i
 ## Explicitly out of scope
 - Full WhatsApp bot orchestration beyond the basic Whapi webhook moderation.
 - Payment processing (subscription fields exist but no checkout flow).
-- Admin notifications or analytics beyond the static dashboard UI.
+- Admin notifications, analytics dashboards, or analytics pipelines.
 
 ## Key docs (start here)
 - `ARCHITECTURE.md`: system overview, data flow, auth model, directory map.
