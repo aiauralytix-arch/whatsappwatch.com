@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import {
   sendPhoneVerificationOtp,
-  getPhoneVerificationStatus,
   verifyPhoneVerificationOtp,
 } from "@/src/actions/moderation/verification.actions";
 import CountryCodeSelect from "@/app/dashboard/components/country-code-select";
@@ -18,9 +17,19 @@ import {
 } from "@/app/dashboard/data/countries";
 
 const defaultMessage =
-  "Add your WhatsApp number to confirm you can receive moderation alerts.";
+  "Add your WhatsApp number to verify your account. OTP will be sent on WhatsApp.";
 
-export default function PhoneVerificationSection() {
+type PhoneVerificationSectionProps = {
+  verifiedPhoneNumber: string | null;
+  verifiedAt: string | null;
+  onPhoneVerified: (phoneNumber: string, verifiedAt?: string | null) => void;
+};
+
+export default function PhoneVerificationSection({
+  verifiedPhoneNumber,
+  verifiedAt,
+  onPhoneVerified,
+}: PhoneVerificationSectionProps) {
   const [selectedCountryCode, setSelectedCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [phoneInput, setPhoneInput] = useState("");
   const [otpInput, setOtpInput] = useState("");
@@ -49,23 +58,11 @@ export default function PhoneVerificationSection() {
   };
 
   useEffect(() => {
-    let isActive = true;
-
-    void getPhoneVerificationStatus()
-      .then((data) => {
-        if (!isActive) return;
-        if (data.phoneNumber && data.verifiedAt) {
-          hydratePhoneInput(data.phoneNumber);
-          setStatus("verified");
-          setMessage(`Verified number: ${data.phoneNumber}.`);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
+    if (!verifiedPhoneNumber || !verifiedAt) return;
+    hydratePhoneInput(verifiedPhoneNumber);
+    setStatus("verified");
+    setMessage(`Verified number: ${verifiedPhoneNumber}.`);
+  }, [verifiedAt, verifiedPhoneNumber]);
 
   const handleSendOtp = async () => {
     if (isSending) return;
@@ -108,6 +105,9 @@ export default function PhoneVerificationSection() {
       setMessage(
         `Phone verified${result.phoneNumber ? `: ${result.phoneNumber}` : ""}. You can now receive WhatsApp alerts.`,
       );
+      if (result.phoneNumber) {
+        onPhoneVerified(result.phoneNumber, result.verifiedAt ?? null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to verify OTP.");
     } finally {
@@ -184,8 +184,7 @@ export default function PhoneVerificationSection() {
             <p className="text-sm text-[#b23a2b]">{error}</p>
           ) : null}
           <p className="text-xs text-[#6b6b6b]">
-            Choose a country code, then enter your local number. Messages are
-            sent via Whapi.Cloud.
+            Choose a country code, then enter your local number.
           </p>
         </CardContent>
       </Card>

@@ -12,6 +12,7 @@
 - Authenticated dashboard in `app/dashboard` (client UI + server actions).
 - Auth pages in `app/(auth)` (`/sign-in`, `/sign-up`).
 - Tailwind CSS for styling, Radix UI primitives in `components/ui`.
+- Dashboard phone inputs use a searchable country-code selector + local number pattern.
 
 **Backend (Server actions + minimal API routes)**
 - Server actions live in `src/actions/moderation/*.actions.ts` (`"use server"`).
@@ -39,6 +40,15 @@ Browser
               -> Server action call (src/actions/moderation/*.actions.ts)
                  -> Supabase (service role key)
                     -> Result back to client
+```
+
+```
+DashboardClient (shared phone verification state)
+  -> getPhoneVerificationStatus() once on load
+  -> passes verified phone state to:
+     - PhoneVerificationSection
+     - GroupsSection (verification instructions modal)
+  -> both sections update the same shared state after OTP verify
 ```
 
 ```
@@ -90,6 +100,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 **app/**
 - App Router routes, layouts, and server/client components.
 - NEVER import server-only modules (like `lib/supabase.ts`) into client components.
+- For phone verification status, prefer a parent-owned state passed via props over per-modal re-fetches.
 
 **app/(static)/**
 - Static marketing routes (kept separate from dashboard/auth).
@@ -141,6 +152,13 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 **src/actions/**
 - Server actions only; thin orchestration wrappers around services.
 - NEVER put business logic directly in action files.
+
+## Verification UX notes
+- Group verification instructions modal includes:
+  - Step guidance for required admins (`verified phone` + `9555488118`).
+  - Inline group-name edit + save.
+  - Inline phone OTP form when phone is not verified.
+- Avoid reintroducing a separate status fetch inside the modal; it causes a visible unverified->verified flicker.
 
 **src/services/**
 - Business logic and Supabase queries.

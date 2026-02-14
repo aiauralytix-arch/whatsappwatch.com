@@ -14,6 +14,7 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Settings arrays (`blocked_keywords`, `allowlist_phone_numbers`) are stored as Postgres arrays; keep them normalized to avoid duplicates.
 - `app/layout.tsx` sets `dynamic = "force-dynamic"`; removing it may break auth/session expectations.
 - `moderation_settings` toggles are: `block_phone_numbers`, `block_links`, `block_group_invites`, `block_contacts`, `block_videos`, `block_images`, `block_keywords` (no spam protection flag).
+- Phone verification status is owned at dashboard parent level (`app/dashboard/dashboard-client.tsx`) and passed to sections.
 
 ## Auth & middleware pitfalls
 - Use `auth.protect()` in middleware so Clerk can redirect properly.
@@ -28,6 +29,8 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Clerk env vars are required by the SDK but not referenced explicitly in code:
   - UNKNOWN / NEEDS CONFIRMATION: exact env variable names for this deployment.
 - Webhook moderation logic lives in `src/services/moderation/whapi-webhook.service.ts` and is the only place messages are evaluated/deleted.
+- Do not re-fetch phone verification status on every modal open in `GroupsSection`; this creates a visible state flicker.
+- Phone verification UI exists in two places by design (card + modal) with similar logic. Keep behavior consistent when editing either.
 
 ## Fast lookup (Codex shortcuts)
 - `rg "block_group_invites|block_links|block_phone_numbers|block_contacts|block_videos|block_images|block_keywords" -n src app types`
@@ -44,6 +47,9 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Update `types/supabase.ts` whenever migrations change schema.
 - Add new migrations rather than editing existing SQL files.
 - Keep UI-only changes in client components; keep data access in server actions.
+- If you touch phone verification flows, verify:
+  - `PhoneVerificationSection` still updates parent shared verification state.
+  - `GroupsSection` consumes that shared state for step text and verify eligibility.
 
 ## Testing & validation
 - Primary dev loop: `npm run dev`.

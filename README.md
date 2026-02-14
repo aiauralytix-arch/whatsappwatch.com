@@ -3,6 +3,7 @@
 WhatsAppWatch is a Next.js app for a WhatsApp group moderation service. It provides:
 - A marketing site with product messaging.
 - An authenticated admin dashboard to store per-group moderation settings.
+- A phone verification flow (OTP on WhatsApp) used by group verification steps.
 
 This repo is intentionally focused on configuration and management UI. It also includes a minimal Whapi webhook endpoint for rule-based message moderation (text, link previews, links, phone numbers, and group invites).
 
@@ -17,6 +18,11 @@ This repo is intentionally focused on configuration and management UI. It also i
 ## Key docs (start here)
 - `ARCHITECTURE.md`: system overview, data flow, auth model, directory map.
 - `AI_NOTES.md`: invariants, sharp edges, and contribution rules for AI agents.
+
+## Current dashboard behavior (important)
+- Phone numbers are entered as `country code + local number` in the dashboard UI.
+- `Phone Verification` and `Groups -> Instructions to follow` both support OTP verification.
+- Phone verification status is loaded once in `app/dashboard/dashboard-client.tsx` and passed down to sections to avoid modal flicker/re-fetch jumps.
 
 ## Development quick start
 ```bash

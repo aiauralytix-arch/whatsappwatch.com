@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import HeaderSection from "@/app/dashboard/sections/header-section";
 import PhoneVerificationSection from "@/app/dashboard/sections/phone-verification-section";
 import GroupsSection from "@/app/dashboard/sections/groups-section";
@@ -14,15 +16,43 @@ import { useGroupHandlers } from "@/app/dashboard/hooks/use-group-handlers";
 import { useSettingsHandlers } from "@/app/dashboard/hooks/use-settings-handlers";
 import { useDefaultsHandlers } from "@/app/dashboard/hooks/use-defaults-handlers";
 import { useDeletedMessages } from "@/app/dashboard/hooks/use-deleted-messages";
+import { getPhoneVerificationStatus } from "@/src/actions/moderation/verification.actions";
 
 type DashboardClientProps = {
   userName: string;
   userEmail: string;
 };
 
+type PhoneVerificationState = {
+  phoneNumber: string | null;
+  verifiedAt: string | null;
+};
+
 export default function DashboardClient({ userName, userEmail }: DashboardClientProps) {
   const { state, setters, canEdit, activeGroup, refreshContext } =
     useDashboardState();
+  const [phoneVerification, setPhoneVerification] = useState<PhoneVerificationState>({
+    phoneNumber: null,
+    verifiedAt: null,
+  });
+
+  useEffect(() => {
+    let isActive = true;
+
+    void getPhoneVerificationStatus()
+      .then((status) => {
+        if (!isActive) return;
+        setPhoneVerification({
+          phoneNumber: status.phoneNumber ?? null,
+          verifiedAt: status.verifiedAt ?? null,
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const groupHandlers = useGroupHandlers({
     state,
@@ -62,7 +92,16 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-24 pt-16 sm:px-10 lg:px-16">
         <HeaderSection userName={userName} userEmail={userEmail} />
-        <PhoneVerificationSection />
+        <PhoneVerificationSection
+          verifiedPhoneNumber={phoneVerification.phoneNumber}
+          verifiedAt={phoneVerification.verifiedAt}
+          onPhoneVerified={(phoneNumber, verifiedAt) => {
+            setPhoneVerification({
+              phoneNumber,
+              verifiedAt: verifiedAt ?? new Date().toISOString(),
+            });
+          }}
+        />
         <GroupsSection
           newGroupName={state.newGroupName}
           newGroupLink={state.newGroupLink}
@@ -78,6 +117,14 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
           groups={state.groups}
           activeGroupId={state.activeGroupId}
           activeGroup={activeGroup}
+          verifiedPhoneNumber={phoneVerification.phoneNumber}
+          isPhoneVerified={Boolean(phoneVerification.phoneNumber && phoneVerification.verifiedAt)}
+          onPhoneVerified={(phoneNumber, verifiedAt) => {
+            setPhoneVerification({
+              phoneNumber,
+              verifiedAt: verifiedAt ?? new Date().toISOString(),
+            });
+          }}
         />
         {state.hasLoaded && state.groups.length > 1 ? (
           <SharedDefaultsSection

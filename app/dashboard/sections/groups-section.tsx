@@ -3,11 +3,20 @@
 import { useEffect, useState } from "react";
 
 import type { ModerationGroup } from "@/types/supabase";
+import CountryCodeSelect from "@/app/dashboard/components/country-code-select";
+import {
+  DEFAULT_COUNTRY_CODE,
+  getCountryCallingCode,
+  splitPhoneByCountryCode,
+} from "@/app/dashboard/data/countries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getPhoneVerificationStatus } from "@/src/actions/moderation/verification.actions";
+import {
+  sendPhoneVerificationOtp,
+  verifyPhoneVerificationOtp,
+} from "@/src/actions/moderation/verification.actions";
 
 const VERIFICATION_ADMIN_NUMBER = "9555488118";
 const NAME_MATCH_THRESHOLD = 0.8;
@@ -77,6 +86,9 @@ type GroupsSectionProps = {
   groups: ModerationGroup[];
   activeGroupId: string | null;
   activeGroup: ModerationGroup | null;
+  verifiedPhoneNumber: string | null;
+  isPhoneVerified: boolean;
+  onPhoneVerified: (phoneNumber: string, verifiedAt?: string | null) => void;
 };
 
 export default function GroupsSection({
@@ -94,6 +106,9 @@ export default function GroupsSection({
   groups,
   activeGroupId,
   activeGroup,
+  verifiedPhoneNumber,
+  isPhoneVerified,
+  onPhoneVerified,
 }: GroupsSectionProps) {
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -106,7 +121,19 @@ export default function GroupsSection({
     name: string;
   } | null>(null);
   const [groupNameInput, setGroupNameInput] = useState("");
-  const [verifiedPhoneLabel, setVerifiedPhoneLabel] = useState<string | null>(null);
+  const [verifiedPhoneLabel, setVerifiedPhoneLabel] = useState<string | null>(
+    verifiedPhoneNumber,
+  );
+  const [verificationCountryCode, setVerificationCountryCode] = useState(
+    DEFAULT_COUNTRY_CODE,
+  );
+  const [verificationPhoneInput, setVerificationPhoneInput] = useState("");
+  const [verificationOtpInput, setVerificationOtpInput] = useState("");
+  const [hasSentVerificationOtp, setHasSentVerificationOtp] = useState(false);
+  const [isSendingVerificationOtp, setIsSendingVerificationOtp] = useState(false);
+  const [isVerifyingVerificationOtp, setIsVerifyingVerificationOtp] = useState(false);
+  const [verificationPhoneError, setVerificationPhoneError] = useState<string | null>(null);
+  const [verificationPhoneNote, setVerificationPhoneNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeGroup) {
@@ -129,6 +156,7 @@ export default function GroupsSection({
     setVerificationNote(null);
     setCandidateGroups([]);
     setSelectedCandidateId(null);
+    setVerifiedPhoneLabel(verifiedPhoneNumber);
     setIsVerificationOpen(true);
   };
 
@@ -139,32 +167,107 @@ export default function GroupsSection({
     setSelectedCandidateId(null);
     setVerificationError(null);
     setVerificationNote(null);
-    setVerifiedPhoneLabel(null);
+    setVerificationCountryCode(DEFAULT_COUNTRY_CODE);
+    setVerificationPhoneInput("");
+    setVerificationOtpInput("");
+    setHasSentVerificationOtp(false);
+    setIsSendingVerificationOtp(false);
+    setIsVerifyingVerificationOtp(false);
+    setVerificationPhoneError(null);
+    setVerificationPhoneNote(null);
   };
 
   useEffect(() => {
-    if (!isVerificationOpen) return;
+    setVerifiedPhoneLabel(verifiedPhoneNumber);
+    if (!verifiedPhoneNumber) return;
+    const parsed = splitPhoneByCountryCode(verifiedPhoneNumber);
+    if (parsed) {
+      setVerificationCountryCode(parsed.countryCode);
+      setVerificationPhoneInput(parsed.localNumber);
+      return;
+    }
+    setVerificationPhoneInput(verifiedPhoneNumber.replace(/\D/g, ""));
+  }, [verifiedPhoneNumber]);
 
-    let isActive = true;
+  const composeVerificationPhoneNumber = () => {
+    const localDigits = verificationPhoneInput.replace(/\D/g, "");
+    if (!localDigits) return "";
+    const callingCode = getCountryCallingCode(verificationCountryCode);
+    return `+${callingCode}${localDigits}`;
+  };
 
-    void getPhoneVerificationStatus()
-      .then((status) => {
-        if (!isActive) return;
-        if (status.phoneNumber && status.verifiedAt) {
-          setVerifiedPhoneLabel(status.phoneNumber);
-        } else {
-          setVerifiedPhoneLabel(null);
-        }
-      })
-      .catch(() => {
-        if (!isActive) return;
-        setVerifiedPhoneLabel(null);
-      });
+  const hydrateVerificationPhoneInput = (value: string) => {
+    const parsed = splitPhoneByCountryCode(value);
+    if (parsed) {
+      setVerificationCountryCode(parsed.countryCode);
+      setVerificationPhoneInput(parsed.localNumber);
+      return;
+    }
 
-    return () => {
-      isActive = false;
-    };
-  }, [isVerificationOpen]);
+    setVerificationPhoneInput(value.replace(/\D/g, ""));
+  };
+
+  const handleSendVerificationOtp = async () => {
+    if (isSendingVerificationOtp) return;
+    const normalizedPhone = composeVerificationPhoneNumber();
+    if (!normalizedPhone) {
+      setVerificationPhoneError("Enter a valid phone number.");
+      return;
+    }
+
+    setVerificationPhoneError(null);
+    setVerificationPhoneNote(null);
+    setIsSendingVerificationOtp(true);
+
+    try {
+      const result = await sendPhoneVerificationOtp(normalizedPhone);
+      setHasSentVerificationOtp(true);
+      setVerificationOtpInput("");
+      setVerificationPhoneNote(
+        `Code sent to ${result.sentTo}. It expires in 10 minutes.`,
+      );
+    } catch (err) {
+      setVerificationPhoneError(
+        err instanceof Error ? err.message : "Failed to send OTP.",
+      );
+    } finally {
+      setIsSendingVerificationOtp(false);
+    }
+  };
+
+  const handleVerifyVerificationOtp = async () => {
+    if (isVerifyingVerificationOtp) return;
+    const normalizedPhone = composeVerificationPhoneNumber();
+    if (!normalizedPhone) {
+      setVerificationPhoneError("Enter a valid phone number.");
+      return;
+    }
+
+    setVerificationPhoneError(null);
+    setVerificationPhoneNote(null);
+    setIsVerifyingVerificationOtp(true);
+
+    try {
+      const result = await verifyPhoneVerificationOtp(
+        normalizedPhone,
+        verificationOtpInput,
+      );
+      if (result.phoneNumber) {
+        setVerifiedPhoneLabel(result.phoneNumber);
+        hydrateVerificationPhoneInput(result.phoneNumber);
+        onPhoneVerified(result.phoneNumber, result.verifiedAt ?? null);
+      }
+      setVerificationPhoneNote(
+        `Phone verified${result.phoneNumber ? `: ${result.phoneNumber}` : ""}.`,
+      );
+    } catch (err) {
+      setVerificationPhoneError(
+        err instanceof Error ? err.message : "Failed to verify OTP.",
+      );
+    } finally {
+      setIsVerifyingVerificationOtp(false);
+    }
+  };
 
   const handleCheckVerification = async () => {
     if (!verificationTarget) return;
@@ -183,18 +286,13 @@ export default function GroupsSection({
         );
       }
 
-      const phoneStatus = await getPhoneVerificationStatus();
-      if (!phoneStatus.phoneNumber || !phoneStatus.verifiedAt) {
+      if (!isPhoneVerified || !verifiedPhoneLabel) {
         throw new Error("Verify your phone number before checking a group.");
       }
 
-      const userPhone = getPhoneMatchKey(phoneStatus.phoneNumber);
+      const userPhone = getPhoneMatchKey(verifiedPhoneLabel);
       if (!userPhone) {
         throw new Error("Verified phone number is invalid.");
-      }
-
-      if (!verifiedPhoneLabel) {
-        setVerifiedPhoneLabel(phoneStatus.phoneNumber);
       }
 
       const response = await fetch("/api/whapi/groups", { cache: "no-store" });
@@ -246,15 +344,16 @@ export default function GroupsSection({
         .map((entry) => entry.group);
 
       if (matches.length === 0) {
+        const requiredUserNumber = verifiedPhoneLabel ?? "your verified number";
         throw new Error(
-          "No matching group found. Confirm the group name matches the WhatsApp group name and that your verified number plus 9555488118 are admins.",
+          `No matching group found. Confirm the group name matches the WhatsApp group name and that ${requiredUserNumber} plus 9555488118 are admins.`,
         );
       }
 
       if (matches.length === 1) {
         await onVerifyGroup(verificationTarget.id, matches[0].id);
         setVerificationNote(
-          `Verified ${matches[0].name ?? "group"} successfully.`,
+          `Spam protection is now active in \`${matches[0].name ?? "your group"}\`.`,
         );
         return;
       }
@@ -304,9 +403,8 @@ export default function GroupsSection({
         <CardHeader>
           <CardTitle>Groups</CardTitle>
           <CardDescription>
-            Add up to 50 groups. Group name is required and should match the
-            WhatsApp group name as closely as possible for verification.
-            Subscription is Rs 299 per group.
+            Group name should match the WhatsApp group name as closely as
+            possible for verification. Subscription is Rs 299 per group.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -435,7 +533,7 @@ export default function GroupsSection({
                   onClick={openVerification}
                   disabled={!activeGroupId || isSyncing}
                 >
-                  Verify group
+                  Instructions to follow
                 </Button>
                 <Button
                   variant="outline"
@@ -457,12 +555,8 @@ export default function GroupsSection({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-[#161616]">
-                  Verify group
+                  Instructions to follow
                 </h3>
-                <p className="mt-1 text-sm text-[#6b6b6b]">
-                  Verify “{verificationTarget?.name || "Untitled group"}” before
-                  running moderation.
-                </p>
               </div>
               <Button
                 variant="outline"
@@ -476,27 +570,138 @@ export default function GroupsSection({
 
             <div className="mt-4 space-y-3 text-sm text-[#6b6b6b]">
               <p>
-                Before verifying, make sure your OTP-verified number is an admin of the
-                WhatsApp group.
+                1.{" "}
+                {verifiedPhoneLabel ? (
+                  <>
+                    Add{" "}
+                    <span className="font-semibold text-[#161616]">
+                      {verifiedPhoneLabel}
+                    </span>{" "}
+                    to the group and make it admin.
+                  </>
+                ) : (
+                  <>
+                    Verify your phone number using the fields below, then add
+                    it to the group and make it admin.
+                  </>
+                )}
               </p>
+              {!verifiedPhoneLabel ? (
+                <div className="space-y-3 rounded-2xl border border-[#e2dad0] bg-white p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <CountryCodeSelect
+                      value={verificationCountryCode}
+                      onChange={setVerificationCountryCode}
+                      disabled={
+                        isSendingVerificationOtp || isVerifyingVerificationOtp
+                      }
+                      className="sm:w-[128px]"
+                    />
+                    <span className="hidden self-center text-sm text-[#9a948b] sm:inline">
+                      |
+                    </span>
+                    <Input
+                      placeholder="Enter number"
+                      value={verificationPhoneInput}
+                      onChange={(event) => setVerificationPhoneInput(event.target.value)}
+                      inputMode="tel"
+                      disabled={isSendingVerificationOtp || isVerifyingVerificationOtp}
+                    />
+                    <Button
+                      variant="outline"
+                      className="whitespace-nowrap"
+                      onClick={handleSendVerificationOtp}
+                      disabled={
+                        isSendingVerificationOtp ||
+                        isVerifyingVerificationOtp ||
+                        verificationPhoneInput.trim().length === 0
+                      }
+                    >
+                      {isSendingVerificationOtp ? "Sending..." : "Send OTP"}
+                    </Button>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input
+                      placeholder="Enter 6 digit code"
+                      value={verificationOtpInput}
+                      onChange={(event) => setVerificationOtpInput(event.target.value)}
+                      inputMode="numeric"
+                      maxLength={6}
+                      autoComplete="one-time-code"
+                      disabled={
+                        isSendingVerificationOtp ||
+                        isVerifyingVerificationOtp ||
+                        !hasSentVerificationOtp
+                      }
+                    />
+                    <Button
+                      className="whitespace-nowrap"
+                      onClick={handleVerifyVerificationOtp}
+                      disabled={
+                        isSendingVerificationOtp ||
+                        isVerifyingVerificationOtp ||
+                        !hasSentVerificationOtp ||
+                        verificationOtpInput.trim().length !== 6
+                      }
+                    >
+                      {isVerifyingVerificationOtp ? "Verifying..." : "Verify phone"}
+                    </Button>
+                  </div>
+                  {verificationPhoneError ? (
+                    <p className="text-sm text-[#b23a2b]">{verificationPhoneError}</p>
+                  ) : null}
+                  {verificationPhoneNote ? (
+                    <p className="text-sm text-[#1b6f5f]">{verificationPhoneNote}</p>
+                  ) : null}
+                </div>
+              ) : null}
 
               <p>
-                1. Add <span className="font-semibold text-[#161616]">9555488118</span> to
-                your WhatsApp group.
-              </p>
-
-              <p>
-                2. Make <span className="font-semibold text-[#161616]">9555488118</span> an
-                admin of the group.
-              </p>
-
-              <p>
-                3. Make sure{" "}
+                2. Add spam removal bot{" "}
                 <span className="font-semibold text-[#161616]">
-                  {verifiedPhoneLabel ?? "your verified number"}
+                  (9555488118)
                 </span>{" "}
-                is also in the group and is an admin.
+                and make it admin.
               </p>
+
+              <p>
+                3. Confirm the group name entered below matches the real
+                WhatsApp group name as exactly as possible.
+              </p>
+
+              <div className="space-y-3">
+                <Input
+                  placeholder="Update group name (required)"
+                  value={groupNameInput}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setGroupNameInput(nextValue);
+                    setVerificationTarget((prev) =>
+                      prev ? { ...prev, name: nextValue } : prev,
+                    );
+                  }}
+                  maxLength={80}
+                  disabled={isChecking || isSyncing || !verificationTarget}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (!verificationTarget) return;
+                    onRenameGroup(verificationTarget.id, groupNameInput);
+                  }}
+                  disabled={
+                    !verificationTarget ||
+                    isChecking ||
+                    isSyncing ||
+                    groupNameInput.trim().length === 0 ||
+                    groupNameInput.trim() ===
+                    (activeGroup?.groupName ?? "").trim()
+                  }
+                >
+                  Save group name
+                </Button>
+              </div>
 
               <p>
                 4. Click <strong>Verify</strong>. We’ll check that both numbers are admins
@@ -505,7 +710,10 @@ export default function GroupsSection({
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">
-              <Button onClick={handleCheckVerification} disabled={isChecking}>
+              <Button
+                onClick={handleCheckVerification}
+                disabled={isChecking || !verifiedPhoneLabel}
+              >
                 {isChecking ? "Checking..." : "Verify now"}
               </Button>
             </div>
