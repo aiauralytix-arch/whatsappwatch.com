@@ -71,10 +71,11 @@ export const useSettingsHandlers = ({
     [canEdit, persistSettings, setters, state.keywords],
   );
 
-  const addAllowlistNumbers = React.useCallback(() => {
+  const addAllowlistNumbers = React.useCallback((rawInput?: string) => {
     if (!canEdit) return;
+    const sourceInput = rawInput ?? state.allowlistNumberInput;
     const next = normalizeAllowlistNumbersInput(
-      state.allowlistNumberInput.split(","),
+      sourceInput.split(","),
     );
     if (next.length === 0) return;
     const updated = Array.from(new Set([...state.allowlistNumbers, ...next]));

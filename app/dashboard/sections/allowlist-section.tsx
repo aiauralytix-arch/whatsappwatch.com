@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import CountryCodeSelect from "@/app/dashboard/components/country-code-select";
+import { DEFAULT_COUNTRY_CODE, getCountryCallingCode } from "@/app/dashboard/data/countries";
 
 type AllowlistSectionProps = {
   allowlistNumberInput: string;
@@ -11,7 +15,7 @@ type AllowlistSectionProps = {
   canEdit: boolean;
   isSyncing: boolean;
   onAllowlistInputChange: (value: string) => void;
-  onAddAllowlistNumbers: () => void;
+  onAddAllowlistNumbers: (rawInput?: string) => void;
   onRemoveAllowlistNumber: (number: string) => void;
 };
 
@@ -24,9 +28,26 @@ export default function AllowlistSection({
   onAddAllowlistNumbers,
   onRemoveAllowlistNumber,
 }: AllowlistSectionProps) {
+  const [selectedCountryCode, setSelectedCountryCode] = useState(DEFAULT_COUNTRY_CODE);
+
+  const handleAddAllowlistNumbers = () => {
+    const callingCode = getCountryCallingCode(selectedCountryCode);
+    const localNumbers = allowlistNumberInput
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => entry.replace(/\D/g, ""))
+      .filter(Boolean);
+
+    if (localNumbers.length === 0) return;
+
+    const formatted = localNumbers.map((entry) => `+${callingCode}${entry}`);
+    onAddAllowlistNumbers(formatted.join(","));
+  };
+
   return (
-    <section>
-      <Card className="bg-[#fefcf9]">
+    <section className="relative z-20">
+      <Card className="relative z-20 bg-[#fefcf9]">
         <CardHeader>
           <CardTitle>Allowlist</CardTitle>
           <CardDescription>
@@ -36,8 +57,17 @@ export default function AllowlistSection({
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="flex flex-col gap-3 sm:flex-row">
+            <CountryCodeSelect
+              value={selectedCountryCode}
+              onChange={setSelectedCountryCode}
+              disabled={!canEdit || isSyncing}
+              className="sm:w-[128px]"
+            />
+            <span className="hidden self-center text-sm text-[#9a948b] sm:inline">
+              |
+            </span>
             <Input
-              placeholder="Add allowlisted numbers (comma separated, include country code)"
+              placeholder="Enter number"
               value={allowlistNumberInput}
               onChange={(event) => onAllowlistInputChange(event.target.value)}
               disabled={!canEdit || isSyncing}
@@ -45,7 +75,7 @@ export default function AllowlistSection({
             <Button
               variant="outline"
               className="whitespace-nowrap"
-              onClick={onAddAllowlistNumbers}
+              onClick={handleAddAllowlistNumbers}
               disabled={!canEdit || isSyncing}
             >
               Add to allowlist
@@ -74,7 +104,7 @@ export default function AllowlistSection({
             )}
           </div>
           <p className="text-sm text-[#6b6b6b]">
-            Use full numbers with country codes for reliable matching.
+            Pick a country code, then enter the local number.
           </p>
         </CardContent>
       </Card>

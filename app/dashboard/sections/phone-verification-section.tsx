@@ -10,11 +10,18 @@ import {
   getPhoneVerificationStatus,
   verifyPhoneVerificationOtp,
 } from "@/src/actions/moderation/verification.actions";
+import CountryCodeSelect from "@/app/dashboard/components/country-code-select";
+import {
+  DEFAULT_COUNTRY_CODE,
+  getCountryCallingCode,
+  splitPhoneByCountryCode,
+} from "@/app/dashboard/data/countries";
 
 const defaultMessage =
   "Add your WhatsApp number to confirm you can receive moderation alerts.";
 
 export default function PhoneVerificationSection() {
+  const [selectedCountryCode, setSelectedCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [phoneInput, setPhoneInput] = useState("");
   const [otpInput, setOtpInput] = useState("");
   const [status, setStatus] = useState<"idle" | "sent" | "verified">("idle");
@@ -23,6 +30,24 @@ export default function PhoneVerificationSection() {
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
+  const composePhoneNumber = () => {
+    const localDigits = phoneInput.replace(/\D/g, "");
+    if (!localDigits) return "";
+    const callingCode = getCountryCallingCode(selectedCountryCode);
+    return `+${callingCode}${localDigits}`;
+  };
+
+  const hydratePhoneInput = (value: string) => {
+    const parsed = splitPhoneByCountryCode(value);
+    if (parsed) {
+      setSelectedCountryCode(parsed.countryCode);
+      setPhoneInput(parsed.localNumber);
+      return;
+    }
+
+    setPhoneInput(value.replace(/\D/g, ""));
+  };
+
   useEffect(() => {
     let isActive = true;
 
@@ -30,7 +55,7 @@ export default function PhoneVerificationSection() {
       .then((data) => {
         if (!isActive) return;
         if (data.phoneNumber && data.verifiedAt) {
-          setPhoneInput(data.phoneNumber);
+          hydratePhoneInput(data.phoneNumber);
           setStatus("verified");
           setMessage(`Verified number: ${data.phoneNumber}.`);
         }
@@ -44,12 +69,17 @@ export default function PhoneVerificationSection() {
 
   const handleSendOtp = async () => {
     if (isSending) return;
+    const normalizedPhone = composePhoneNumber();
+    if (!normalizedPhone) {
+      setError("Enter a valid phone number.");
+      return;
+    }
     setError(null);
     setMessage(defaultMessage);
     setIsSending(true);
 
     try {
-      const result = await sendPhoneVerificationOtp(phoneInput);
+      const result = await sendPhoneVerificationOtp(normalizedPhone);
       setStatus("sent");
       setMessage(
         `Code sent to ${result.sentTo}. It expires in 10 minutes.`,
@@ -64,11 +94,16 @@ export default function PhoneVerificationSection() {
 
   const handleVerifyOtp = async () => {
     if (isVerifying) return;
+    const normalizedPhone = composePhoneNumber();
+    if (!normalizedPhone) {
+      setError("Enter a valid phone number.");
+      return;
+    }
     setError(null);
     setIsVerifying(true);
 
     try {
-      const result = await verifyPhoneVerificationOtp(phoneInput, otpInput);
+      const result = await verifyPhoneVerificationOtp(normalizedPhone, otpInput);
       setStatus("verified");
       setMessage(
         `Phone verified${result.phoneNumber ? `: ${result.phoneNumber}` : ""}. You can now receive WhatsApp alerts.`,
@@ -81,16 +116,25 @@ export default function PhoneVerificationSection() {
   };
 
   return (
-    <section>
-      <Card className="bg-[#fefcf9]">
+    <section className="relative z-20">
+      <Card className="relative z-20 bg-[#fefcf9]">
         <CardHeader>
           <CardTitle>Phone Verification</CardTitle>
           <CardDescription>{message}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row">
+            <CountryCodeSelect
+              value={selectedCountryCode}
+              onChange={setSelectedCountryCode}
+              disabled={isSending || isVerifying}
+              className="sm:w-[128px]"
+            />
+            <span className="hidden self-center text-sm text-[#9a948b] sm:inline">
+              |
+            </span>
             <Input
-              placeholder="WhatsApp number with country code"
+              placeholder="Enter number"
               value={phoneInput}
               onChange={(event) => setPhoneInput(event.target.value)}
               inputMode="tel"
@@ -140,8 +184,8 @@ export default function PhoneVerificationSection() {
             <p className="text-sm text-[#b23a2b]">{error}</p>
           ) : null}
           <p className="text-xs text-[#6b6b6b]">
-            Use the full number with country code. Messages are sent via
-            Whapi.Cloud.
+            Choose a country code, then enter your local number. Messages are
+            sent via Whapi.Cloud.
           </p>
         </CardContent>
       </Card>
