@@ -8,6 +8,7 @@ export default function SignInPage() {
         path="/sign-in"
         signUpUrl="/sign-up"
         afterSignInUrl="/dashboard"
+        forceRedirectUrl={'/dashboard'}
       />
     </div>
   );
