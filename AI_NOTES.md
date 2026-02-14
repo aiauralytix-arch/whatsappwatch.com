@@ -31,11 +31,14 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Webhook moderation logic lives in `src/services/moderation/whapi-webhook.service.ts` and is the only place messages are evaluated/deleted.
 - Do not re-fetch phone verification status on every modal open in `GroupsSection`; this creates a visible state flicker.
 - Phone verification UI exists in two places by design (card + modal) with similar logic. Keep behavior consistent when editing either.
+- `/api/whapi/groups` response is encrypted/decrypted via `src/lib/crypto/groups-payload.ts`; if you change payload shape, update both encrypt and decrypt sides together.
+- `GROUPS_PAYLOAD_SALT` is currently defined in code (`src/lib/crypto/groups-payload.ts`) and used by both server and client.
 
 ## Fast lookup (Codex shortcuts)
 - `rg "block_group_invites|block_links|block_phone_numbers|block_contacts|block_videos|block_images|block_keywords" -n src app types`
 - `rg "moderation_settings" -n src supabase/migrations`
 - `rg "whapi" -n src app fixtures`
+- `rg "GROUPS_PAYLOAD_SALT|encryptGroupsPayload|decryptGroupsPayload" -n src app`
 - Key files: `src/services/moderation/whapi-webhook.service.ts`, `src/services/moderation/settings.service.ts`, `src/actions/moderation/settings.actions.ts`, `app/dashboard/sections/moderation-toggles-section.tsx`, `types/supabase.ts`
 - Fixtures: `fixtures/whapi-webhook/` (sample payloads for webhook testing)
 

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
+import {
+  GROUPS_PAYLOAD_SALT,
+  encryptGroupsPayload,
+} from "@/src/lib/crypto/groups-payload";
 
 type WhapiGroupsResponse = {
   groups?: unknown;
@@ -104,5 +108,10 @@ export async function GET() {
     })
     .filter((group): group is WhapiGroupResponse => Boolean(group));
 
-  return NextResponse.json({ groups: sanitized });
+  const encrypted = await encryptGroupsPayload(
+    sanitized,
+    GROUPS_PAYLOAD_SALT,
+  );
+
+  return NextResponse.json(encrypted);
 }

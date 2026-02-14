@@ -23,6 +23,7 @@ This repo is intentionally focused on configuration and management UI. It also i
 - Phone numbers are entered as `country code + local number` in the dashboard UI.
 - `Phone Verification` and `Groups -> Instructions to follow` both support OTP verification.
 - Phone verification status is loaded once in `app/dashboard/dashboard-client.tsx` and passed down to sections to avoid modal flicker/re-fetch jumps.
+- `/api/whapi/groups` now returns an encrypted payload that is decrypted in `GroupsSection` before use.
 
 ## Development quick start
 ```bash

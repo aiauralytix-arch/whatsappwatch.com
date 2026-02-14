@@ -27,3 +27,4 @@ Guidance for AI agents working on this repo. Keep changes minimal and aligned wi
 - `app/dashboard/page.tsx` is client-only; auth gating is middleware + a client redirect.
 - `app/dashboard/dashboard-client.tsx` holds shared phone verification status for dashboard sections. Keep this as the single source of truth to avoid modal flicker/regressions.
 - `app/dashboard/sections/groups-section.tsx` verification modal has inline OTP + group-name update flow; preserve this UX unless explicitly changing product behavior.
+- `/api/whapi/groups` returns encrypted payload and `GroupsSection` decrypts it via `src/lib/crypto/groups-payload.ts`; keep both sides aligned when editing.

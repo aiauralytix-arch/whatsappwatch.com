@@ -9,6 +9,10 @@ import {
   getCountryCallingCode,
   splitPhoneByCountryCode,
 } from "@/app/dashboard/data/countries";
+import {
+  GROUPS_PAYLOAD_SALT,
+  decryptGroupsPayload,
+} from "@/src/lib/crypto/groups-payload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -303,8 +307,19 @@ export default function GroupsSection({
         );
       }
 
-      const payload = (await response.json()) as { groups?: unknown };
-      const rawGroups = Array.isArray(payload.groups) ? payload.groups : [];
+      const payload = (await response.json()) as {
+        ciphertext?: string;
+        iv?: string;
+      };
+      if (!payload.ciphertext || !payload.iv) {
+        throw new Error("Encrypted groups payload is invalid.");
+      }
+
+      const rawGroups = await decryptGroupsPayload<WhapiGroup[]>(
+        payload.ciphertext,
+        payload.iv,
+        GROUPS_PAYLOAD_SALT,
+      );
       const helperNumber = getPhoneMatchKey(VERIFICATION_ADMIN_NUMBER);
 
       const matches = rawGroups

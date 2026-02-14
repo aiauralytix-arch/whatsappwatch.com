@@ -19,7 +19,7 @@
 - Business logic and Supabase access live in `src/services/moderation`.
 - Minimal API routes under `app/api/whapi`:
   - `/api/whapi/webhook` handles Whapi webhook moderation.
-  - `/api/whapi/groups` supports group verification lookups.
+  - `/api/whapi/groups` supports group verification lookups and returns encrypted group payloads for client-side decrypt.
 
 **Auth**
 - Clerk for auth (provider in `app/providers.tsx`).
@@ -57,6 +57,14 @@ Whapi webhook
      -> src/services/moderation/whapi-webhook.service.ts
         -> Supabase (service role key)
            -> Optional delete call to Whapi API
+```
+
+```
+/api/whapi/groups
+  -> fetch groups from Whapi
+  -> sanitize payload
+  -> encrypt payload (AES-GCM helper in src/lib/crypto/groups-payload.ts)
+  -> client decrypt in app/dashboard/sections/groups-section.tsx
 ```
 
 ## Data model (Supabase)
@@ -159,6 +167,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
   - Inline group-name edit + save.
   - Inline phone OTP form when phone is not verified.
 - Avoid reintroducing a separate status fetch inside the modal; it causes a visible unverified->verified flicker.
+- `GroupsSection` currently decrypts encrypted groups payload from `/api/whapi/groups` before matching groups.
 
 **src/services/**
 - Business logic and Supabase queries.
