@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import Providers from "./providers"
-
-export const dynamic = "force-dynamic"
+import dynamic from "next/dynamic";
 
 const baseTitle = "WhatsApp Watch";
 const baseDescription =
@@ -31,6 +30,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+
+  const CrispWithNoSSR = dynamic(
+    () => import('../components/crisp/crisp')
+  )
+
   return (
     <html lang="en">
       <head>
@@ -42,7 +46,10 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#f6f3ee] text-[#161616] antialiased">
-        <Providers>{children}</Providers>
+        <CrispWithNoSSR />
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

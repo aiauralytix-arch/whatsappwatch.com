@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import dynamic from 'next/dynamic'
 
 const title = "WhatsApp Watch | Quiet WhatsApp Group Moderation";
 const description =
@@ -27,13 +26,9 @@ export const metadata: Metadata = {
 };
 
 export default function StaticLayout({ children }: { children: ReactNode }) {
-  const CrispWithNoSSR = dynamic(
-    () => import('../../components/crisp/crisp')
-  )
 
   return (
     <>
-      <CrispWithNoSSR />
       {children}
     </>
   );
