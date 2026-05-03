@@ -1,7 +1,7 @@
 # AI Notes (Codex-only mental model)
 
 ## One-paragraph mental model
-This is a Next.js App Router app that serves a marketing site plus a Clerk-protected dashboard. The dashboard uses server actions to read/write Supabase tables for per-group settings and user-level shared defaults. There is no WhatsApp bot or payment pipeline here; this repo only manages configuration.
+This is a Next.js App Router app that serves a marketing site, static MDX blog, and Clerk-protected dashboard. The dashboard uses server actions to read/write Supabase tables for per-group settings and user-level shared defaults. There is no WhatsApp bot or payment pipeline here; this repo only manages configuration.
 
 ## Critical invariants & rules
 - Auth is Clerk-only. `/dashboard` must stay protected by middleware + client redirect.
@@ -25,6 +25,7 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - Server actions (`"use server"`) live in `src/actions/moderation` and are imported into client components; keep them thin.
 - Supabase RLS is not defined in migrations; the service role key bypasses RLS. This is powerful and dangerous.
 - Static marketing routes live under `app/(static)` and auth routes under `app/(auth)`.
+- Static blog routes/content live under `app/(blogs)`; keep blog code and MDX colocated there.
 - Subscription fields exist in the database but there is no payment flow.
 - Clerk env vars are required by the SDK but not referenced explicitly in code:
   - UNKNOWN / NEEDS CONFIRMATION: exact env variable names for this deployment.
@@ -39,6 +40,7 @@ This is a Next.js App Router app that serves a marketing site plus a Clerk-prote
 - `rg "moderation_settings" -n src supabase/migrations`
 - `rg "whapi" -n src app fixtures`
 - `rg "GROUPS_PAYLOAD_SALT|encryptGroupsPayload|decryptGroupsPayload" -n src app`
+- `rg "getAllBlogPosts|getBlogPost|\\.mdx" -n app/'(blogs)'`
 - Key files: `src/services/moderation/whapi-webhook.service.ts`, `src/services/moderation/settings.service.ts`, `src/actions/moderation/settings.actions.ts`, `app/dashboard/sections/moderation-toggles-section.tsx`, `types/supabase.ts`
 - Fixtures: `fixtures/whapi-webhook/` (sample payloads for webhook testing)
 

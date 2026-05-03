@@ -1,7 +1,7 @@
 # Architecture
 
 ## System overview
-- Purpose: marketing site + admin dashboard for managing WhatsApp group moderation settings.
+- Purpose: marketing site + static blog + admin dashboard for managing WhatsApp group moderation settings.
 - Primary users: WhatsApp group admins.
 - Problem solved: centralized configuration of moderation rules per group.
 - Explicitly out of scope: full WhatsApp bot orchestration, payments, analytics pipelines, notifications.
@@ -9,6 +9,7 @@
 ## Architecture map
 **Frontend (Next.js App Router)**
 - Marketing pages in `app/(static)` (`/`, `/process`, `/system`, `/stories`, `/contact`).
+- Static blog in `app/(blogs)` (`/blog`, `/blog/[slug]`) with MDX content colocated under the same route group.
 - Authenticated dashboard in `app/dashboard` (client UI + server actions).
 - Auth pages in `app/(auth)` (`/sign-in`, `/sign-up`).
 - Tailwind CSS for styling, Radix UI primitives in `components/ui`.
@@ -113,6 +114,13 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 **app/(static)/**
 - Static marketing routes (kept separate from dashboard/auth).
 - NEVER place authenticated or server action logic here.
+
+**app/(blogs)/**
+- Static blog route group for SEO content.
+- Blog UI components live in `app/(blogs)/_components`.
+- Blog MDX content lives in `app/(blogs)/content/blog`.
+- Blog loading/registry helpers live under `app/(blogs)/blog/_lib`.
+- Keep blog content file-backed and static unless the product explicitly moves to a CMS/database publishing model.
 
 **app/(auth)/**
 - Sign-in/up routes powered by Clerk.
