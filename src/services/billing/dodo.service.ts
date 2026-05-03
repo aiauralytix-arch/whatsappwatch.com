@@ -35,11 +35,13 @@ const getComparableSignatures = (signatureHeader: string) =>
     .filter(Boolean);
 
 const getWebhookSecretBytes = (secret: string) => {
-  if (secret.startsWith("whsec_")) {
-    return Buffer.from(secret.slice("whsec_".length), "base64");
+  const normalizedSecret = secret.trim();
+
+  if (normalizedSecret.startsWith("whsec_")) {
+    return Buffer.from(normalizedSecret.slice("whsec_".length), "base64");
   }
 
-  return Buffer.from(secret, "utf8");
+  return Buffer.from(normalizedSecret, "utf8");
 };
 
 const timingSafeStringEqual = (a: string, b: string) => {
@@ -59,13 +61,19 @@ export const verifyDodoWebhookSignature = ({
   webhookId: string | null;
   webhookTimestamp: string | null;
   webhookSignature: string | null;
-}) => {
-  const secret =
+}): { verified: boolean; reason?: string } => {
+  const secret = (
     process.env.DODO_PAYMENTS_WEBHOOK_SECRET ??
-    process.env.DODO_PAYMENTS_WEBHOOK_KEY;
+    process.env.DODO_PAYMENTS_WEBHOOK_KEY ??
+    ""
+  ).trim();
 
-  if (!secret || !webhookId || !webhookTimestamp || !webhookSignature) {
-    return false;
+  if (!secret) {
+    return { verified: false, reason: "missing_webhook_secret" };
+  }
+
+  if (!webhookId || !webhookTimestamp || !webhookSignature) {
+    return { verified: false, reason: "missing_webhook_headers" };
   }
 
   const signedPayload = `${webhookId}.${webhookTimestamp}.${rawBody}`;
@@ -76,11 +84,15 @@ export const verifyDodoWebhookSignature = ({
   const expectedBase64 = digest.toString("base64");
   const expectedHex = digest.toString("hex");
 
-  return getComparableSignatures(webhookSignature).some(
+  const signatureMatches = getComparableSignatures(webhookSignature).some(
     (candidate) =>
       timingSafeStringEqual(candidate, expectedBase64) ||
       timingSafeStringEqual(candidate, expectedHex),
   );
+
+  return signatureMatches
+    ? { verified: true }
+    : { verified: false, reason: "signature_mismatch" };
 };
 
 export const createDodoCreditCheckout = async ({

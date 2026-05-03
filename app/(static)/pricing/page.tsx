@@ -13,7 +13,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PricingPage() {
+type PricingPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function PricingPage({ searchParams }: PricingPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const showTestingPack = Object.prototype.hasOwnProperty.call(
+    resolvedSearchParams ?? {},
+    "testing",
+  );
+  const visiblePacks = creditPacks.filter(
+    (pack) => !pack.isTestingOnly || showTestingPack,
+  );
+
   return (
     <div className="min-h-screen bg-[#f6f3ee] text-[#161616]">
       <main className="relative overflow-hidden">
@@ -87,7 +100,7 @@ export default function PricingPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {creditPacks.map((pack) => (
+              {visiblePacks.map((pack) => (
                 <article
                   key={pack.id}
                   className="flex flex-col rounded-3xl border border-[#d5cec3] bg-[#fefcf9] p-6 shadow-[0_30px_80px_rgba(20,20,20,0.08)]"

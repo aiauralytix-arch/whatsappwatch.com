@@ -3,11 +3,20 @@ export const WC_CREDIT_CURRENCY = "INR";
 
 export const creditPacks = [
   {
+    id: "testing",
+    name: "Testing",
+    priceInr: 10,
+    credits: 10,
+    productIdEnv: "DODO_WC_TESTING_PRODUCT_ID",
+    isTestingOnly: true,
+  },
+  {
     id: "starter",
     name: "Starter",
     priceInr: 199,
     credits: 250,
     productIdEnv: "DODO_WC_STARTER_PRODUCT_ID",
+    isTestingOnly: false,
   },
   {
     id: "growth",
@@ -15,6 +24,7 @@ export const creditPacks = [
     priceInr: 499,
     credits: 750,
     productIdEnv: "DODO_WC_GROWTH_PRODUCT_ID",
+    isTestingOnly: false,
   },
   {
     id: "pro",
@@ -22,6 +32,7 @@ export const creditPacks = [
     priceInr: 999,
     credits: 2000,
     productIdEnv: "DODO_WC_PRO_PRODUCT_ID",
+    isTestingOnly: false,
   },
   {
     id: "power",
@@ -29,6 +40,7 @@ export const creditPacks = [
     priceInr: 2499,
     credits: 6000,
     productIdEnv: "DODO_WC_POWER_PRODUCT_ID",
+    isTestingOnly: false,
   },
 ] as const;
 

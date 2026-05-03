@@ -5,10 +5,11 @@
 - Primary users: WhatsApp group admins.
 - Problem solved: centralized configuration of moderation rules per group.
 - Explicitly out of scope: full WhatsApp bot orchestration, analytics pipelines, notifications.
+- Billing model: prepaid WC credits purchased through Dodo Payments; 1 credit is spent per successful Whapi delete.
 
 ## Architecture map
 **Frontend (Next.js App Router)**
-- Marketing pages in `app/(static)` (`/`, `/process`, `/system`, `/stories`, `/contact`).
+- Marketing pages in `app/(static)` (`/`, `/process`, `/system`, `/stories`, `/contact`, `/pricing`).
 - Static blog in `app/(blogs)` (`/blog`, `/blog/[slug]`) with MDX content colocated under the same route group.
 - Authenticated dashboard in `app/dashboard` (client UI + server actions).
 - Auth pages in `app/(auth)` (`/sign-in`, `/sign-up`).
@@ -18,6 +19,7 @@
 **Backend (Server actions + minimal API routes)**
 - Server actions live in `src/actions/moderation/*.actions.ts` (`"use server"`).
 - Business logic and Supabase access live in `src/services/moderation`.
+- Billing actions live in `src/actions/billing`; billing services live in `src/services/billing`.
 - Minimal API routes under `app/api/whapi`:
   - `/api/whapi/webhook` handles Whapi webhook moderation.
   - `/api/whapi/groups` supports group verification lookups and returns encrypted group payloads for client-side decrypt.
@@ -81,7 +83,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - One row per WhatsApp group a user configures.
 - Constraints:
   - `unique (user_id, group_link)` prevents duplicate group links per user.
-- Fields include `group_link`, optional `group_name`, subscription placeholders.
+- Fields include `group_link`, optional `group_name`, verification fields, and legacy subscription placeholders.
 
 **moderation_settings**
 - One row per group (`group_id` is unique + not null).
@@ -101,6 +103,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - One WC credit wallet per Clerk user.
 - Ledger is append-only and records the initial 20-credit grant, purchases, deductions, and adjustments.
 - Billing events store Dodo webhook IDs for idempotency.
+- See `BILLING.md` for the checkout, webhook, and delete-charging flow.
 
 ## Auth & middleware deep dive
 - `lib/auth/server.ts` re-exports Clerk server helpers:
@@ -175,6 +178,8 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 **src/actions/**
 - Server actions only; thin orchestration wrappers around services.
 - NEVER put business logic directly in action files.
+- `src/actions/moderation` is for moderation settings/groups/defaults.
+- `src/actions/billing` is for WC wallet and Dodo checkout actions.
 
 ## Verification UX notes
 - Group verification instructions modal includes:
@@ -187,6 +192,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 **src/services/**
 - Business logic and Supabase queries.
 - Keep services domain-scoped (groups, settings, defaults).
+- Billing services live under `src/services/billing` and own Dodo + WC credit behavior.
 
 **src/lib/moderation/**
 - Normalization, validation, and mapping helpers.

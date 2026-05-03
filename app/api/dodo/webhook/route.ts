@@ -13,14 +13,22 @@ export async function POST(request: Request) {
   const webhookTimestamp = request.headers.get("webhook-timestamp");
   const webhookSignature = request.headers.get("webhook-signature");
 
-  const isVerified = verifyDodoWebhookSignature({
+  const verification = verifyDodoWebhookSignature({
     rawBody,
     webhookId,
     webhookTimestamp,
     webhookSignature,
   });
 
-  if (!isVerified || !webhookId) {
+  if (!verification.verified || !webhookId) {
+    console.error("Dodo webhook signature verification failed:", {
+      reason: verification.reason ?? "unknown",
+      hasWebhookId: Boolean(webhookId),
+      hasWebhookTimestamp: Boolean(webhookTimestamp),
+      hasWebhookSignature: Boolean(webhookSignature),
+      bodyLength: rawBody.length,
+    });
+
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 

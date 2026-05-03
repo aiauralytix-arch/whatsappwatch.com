@@ -27,6 +27,7 @@ This is a Next.js App Router app that serves a marketing site, static MDX blog, 
 - Static marketing routes live under `app/(static)` and auth routes under `app/(auth)`.
 - Static blog routes/content live under `app/(blogs)`; keep blog code and MDX colocated there.
 - WC credits are prepaid. New wallets receive 20 credits, and successful Whapi deletes reserve/deduct 1 credit.
+- `BILLING.md` is the source of truth for WC credit rules, Dodo checkout/webhooks, Whapi delete charging, and debugging SQL.
 - Clerk env vars are required by the SDK but not referenced explicitly in code:
   - UNKNOWN / NEEDS CONFIRMATION: exact env variable names for this deployment.
 - Webhook moderation logic lives in `src/services/moderation/whapi-webhook.service.ts` and is the only place messages are evaluated/deleted.
@@ -39,9 +40,11 @@ This is a Next.js App Router app that serves a marketing site, static MDX blog, 
 - `rg "block_group_invites|block_links|block_phone_numbers|block_contacts|block_videos|block_images|block_keywords" -n src app types`
 - `rg "moderation_settings" -n src supabase/migrations`
 - `rg "whapi" -n src app fixtures`
+- `rg "credit_wallet|credit_ledger|billing_events|Dodo|WC credit" -n src app supabase types BILLING.md`
 - `rg "GROUPS_PAYLOAD_SALT|encryptGroupsPayload|decryptGroupsPayload" -n src app`
 - `rg "getAllBlogPosts|getBlogPost|\\.mdx" -n app/'(blogs)'`
 - Key files: `src/services/moderation/whapi-webhook.service.ts`, `src/services/moderation/settings.service.ts`, `src/actions/moderation/settings.actions.ts`, `app/dashboard/sections/moderation-toggles-section.tsx`, `types/supabase.ts`
+- Billing files: `BILLING.md`, `src/services/billing/credits.service.ts`, `src/services/billing/dodo.service.ts`, `src/lib/billing/credit-packs.ts`, `app/api/dodo/webhook/route.ts`
 - Fixtures: `fixtures/whapi-webhook/` (sample payloads for webhook testing)
 
 ## Contribution rules for AI agents
