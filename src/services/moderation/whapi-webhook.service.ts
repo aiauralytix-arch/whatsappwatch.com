@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { defaultSettings } from "@/src/lib/moderation/settings-constants";
+import {
+  refundMessageDeleteCredit,
+  reserveMessageDeleteCredit,
+} from "@/src/services/billing/credits.service";
 
 type WhatsappModerationMessage = {
   id: string;
@@ -618,12 +622,51 @@ export const processWhatsappModerationWorkflow = async (
     const isGroupMessage = Boolean(message.groupId);
 
     let wasDeleted = false;
+    let reservedCredit = false;
 
     if (isSpam && !isAllowlisted && isGroupMessage) {
-      try {
-        wasDeleted = await deleteWhatsappMessageById(message.id);
-      } catch {
-        wasDeleted = false;
+      if (config) {
+        try {
+          const reservation = await reserveMessageDeleteCredit(
+            config.userId,
+            message.id,
+            {
+              groupId: config.groupId,
+              whapiGroupId: message.groupId,
+              messageType: message.type,
+            },
+          );
+          reservedCredit = reservation.charged;
+        } catch (error) {
+          console.error(
+            "Failed to reserve WC credit:",
+            error instanceof Error ? error.message : error,
+          );
+          reservedCredit = false;
+        }
+      }
+
+      if (reservedCredit) {
+        try {
+          wasDeleted = await deleteWhatsappMessageById(message.id);
+        } catch {
+          wasDeleted = false;
+        }
+
+        if (!wasDeleted && config) {
+          try {
+            await refundMessageDeleteCredit(config.userId, message.id, {
+              groupId: config.groupId,
+              whapiGroupId: message.groupId,
+              reason: "whapi_delete_failed",
+            });
+          } catch (error) {
+            console.error(
+              "Failed to refund WC credit:",
+              error instanceof Error ? error.message : error,
+            );
+          }
+        }
       }
     }
 

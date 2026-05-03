@@ -4,6 +4,7 @@ WhatsAppWatch is a Next.js app for a WhatsApp group moderation service. It provi
 - A marketing site with product messaging.
 - An authenticated admin dashboard to store per-group moderation settings.
 - A phone verification flow (OTP on WhatsApp) used by group verification steps.
+- A prepaid WC credit wallet for billing successful message deletes.
 
 This repo is intentionally focused on configuration and management UI. It also includes a minimal Whapi webhook endpoint for rule-based message moderation (text, link previews, links, phone numbers, and group invites).
 
@@ -12,7 +13,6 @@ This repo is intentionally focused on configuration and management UI. It also i
 
 ## Explicitly out of scope
 - Full WhatsApp bot orchestration beyond the basic Whapi webhook moderation.
-- Payment processing (subscription fields exist but no checkout flow).
 - Admin notifications, analytics dashboards, or analytics pipelines.
 
 ## Key docs (start here)
@@ -36,6 +36,12 @@ These must be present or the app will fail at runtime:
 - `NEXT_PUBLIC_SUPABASE_URL` (public)
 - `SUPABASE_SERVICE_ROLE_KEY` (secret; server-only)
 - `WHAPI_API_TOKEN` (secret; used for Whapi API calls)
+- `DODO_PAYMENTS_API_KEY` (secret; used to create checkout sessions)
+- `DODO_PAYMENTS_WEBHOOK_SECRET` (secret; used to verify Dodo webhooks)
+- `NEXT_PUBLIC_APP_URL` (used for Dodo checkout redirects)
+- `DODO_WC_STARTER_PRODUCT_ID`, `DODO_WC_GROWTH_PRODUCT_ID`, `DODO_WC_PRO_PRODUCT_ID`, `DODO_WC_POWER_PRODUCT_ID` (Dodo one-time product IDs)
+
+For local Dodo webhook testing, set `NEXT_PUBLIC_APP_URL` to your tunnel URL and paste `${NEXT_PUBLIC_APP_URL}/api/dodo/webhook` into Dodo.
 
 Clerk variables are required to run auth, but are not referenced directly in code. See `ARCHITECTURE.md` for notes on what is UNKNOWN/NEEDS CONFIRMATION.
 

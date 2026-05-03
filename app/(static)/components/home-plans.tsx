@@ -1,8 +1,12 @@
 "use client";
 
+import Link from "next/link";
+
 const plans = [
-  { title: "Signal Sprint", price: "12k", detail: "Two-week diagnostic + signal board." },
-  { title: "System Atelier", price: "36k", detail: "Full operating system with rituals + rollout." },
+  { title: "Starter", price: "₹199", detail: "250 WC credits for light moderation." },
+  { title: "Growth", price: "₹499", detail: "750 WC credits for active groups." },
+  { title: "Pro", price: "₹999", detail: "2,000 WC credits for busy communities." },
+  { title: "Power", price: "₹2,499", detail: "6,000 WC credits for high-volume groups." },
 ];
 
 export default function HomePlans() {
@@ -14,18 +18,18 @@ export default function HomePlans() {
             Plans
           </p>
           <h2 className="font-[var(--font-space)] text-3xl font-semibold">
-            One page, one system, complete alignment.
+            Pay only when spam is actually removed.
           </h2>
           <p className="font-[var(--font-plex)] text-base leading-7 text-[#4b4b4b]">
-            Choose the engagement that matches your pace. Every plan delivers a
-            single cohesive operating canvas.
+            Buy prepaid WC credits and use 1 credit for every successfully
+            deleted WhatsApp message.
           </p>
-          <a
-            href="/contact"
+          <Link
+            href="/pricing"
             className="inline-flex w-fit rounded-full bg-[#161616] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]"
           >
-            Reserve a Slot
-          </a>
+            View Pricing
+          </Link>
         </div>
         <div className="grid gap-4">
           {plans.map((plan) => (

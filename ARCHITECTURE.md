@@ -4,7 +4,7 @@
 - Purpose: marketing site + static blog + admin dashboard for managing WhatsApp group moderation settings.
 - Primary users: WhatsApp group admins.
 - Problem solved: centralized configuration of moderation rules per group.
-- Explicitly out of scope: full WhatsApp bot orchestration, payments, analytics pipelines, notifications.
+- Explicitly out of scope: full WhatsApp bot orchestration, analytics pipelines, notifications.
 
 ## Architecture map
 **Frontend (Next.js App Router)**
@@ -21,6 +21,8 @@
 - Minimal API routes under `app/api/whapi`:
   - `/api/whapi/webhook` handles Whapi webhook moderation.
   - `/api/whapi/groups` supports group verification lookups and returns encrypted group payloads for client-side decrypt.
+- Billing API routes under `app/api/dodo`:
+  - `/api/dodo/webhook` verifies Dodo webhooks and credits prepaid WC purchases.
 
 **Auth**
 - Clerk for auth (provider in `app/providers.tsx`).
@@ -95,6 +97,11 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - One row per deleted message (keyed by `whapi_message_id`).
 - Stores message text, matched keywords, and deletion reasons for later analysis.
 
+**credit_wallets / credit_ledger / billing_events**
+- One WC credit wallet per Clerk user.
+- Ledger is append-only and records the initial 20-credit grant, purchases, deductions, and adjustments.
+- Billing events store Dodo webhook IDs for idempotency.
+
 ## Auth & middleware deep dive
 - `lib/auth/server.ts` re-exports Clerk server helpers:
   - `authMiddleware` is `clerkMiddleware`.
@@ -155,7 +162,7 @@ The data model is intentionally minimal and keyed off Clerk user IDs.
 - Clerk: authentication and user management.
 - Supabase: Postgres storage (service role key used server-side).
 - WhatsApp (via Whapi): webhook moderation + delete API calls.
-- Stripe/Payments: not implemented (subscription fields are placeholders).
+- Dodo Payments: checkout sessions for prepaid WC credit packs and webhooks for purchase fulfillment.
 
 ## Environment & configuration
 - Required:

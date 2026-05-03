@@ -137,6 +137,39 @@ export type ModerationContext = {
   defaults: ModerationDefaults | null;
 };
 
+export type CreditWalletRow = {
+  id: string;
+  user_id: string;
+  balance: number;
+  total_purchased: number;
+  total_spent: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreditWallet = {
+  id: string;
+  userId: string;
+  balance: number;
+  totalPurchased: number;
+  totalSpent: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreditLedgerRow = {
+  id: string;
+  user_id: string;
+  wallet_id: string;
+  type: "grant" | "purchase" | "deduction" | "adjustment";
+  amount: number;
+  balance_after: number;
+  reference_type: string | null;
+  reference_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
 export type PhoneVerificationRow = {
   id: string;
   user_id: string;

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import HeaderSection from "@/app/dashboard/sections/header-section";
+import BillingSection from "@/app/dashboard/sections/billing-section";
 import PhoneVerificationSection from "@/app/dashboard/sections/phone-verification-section";
 import GroupsSection from "@/app/dashboard/sections/groups-section";
 import SharedDefaultsSection from "@/app/dashboard/sections/shared-defaults-section";
@@ -17,6 +18,7 @@ import { useSettingsHandlers } from "@/app/dashboard/hooks/use-settings-handlers
 import { useDefaultsHandlers } from "@/app/dashboard/hooks/use-defaults-handlers";
 import { useDeletedMessages } from "@/app/dashboard/hooks/use-deleted-messages";
 import { getPhoneVerificationStatus } from "@/src/actions/moderation/verification.actions";
+import { getWcCreditWallet } from "@/src/actions/billing/credits.actions";
 
 type DashboardClientProps = {
   userName: string;
@@ -35,6 +37,8 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
     phoneNumber: null,
     verifiedAt: null,
   });
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [isCreditBalanceLoading, setIsCreditBalanceLoading] = useState(true);
 
   useEffect(() => {
     let isActive = true;
@@ -48,6 +52,28 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
         });
       })
       .catch(() => {});
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    void getWcCreditWallet()
+      .then((wallet) => {
+        if (!isActive) return;
+        setCreditBalance(wallet.balance);
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setCreditBalance(null);
+      })
+      .finally(() => {
+        if (!isActive) return;
+        setIsCreditBalanceLoading(false);
+      });
 
     return () => {
       isActive = false;
@@ -92,6 +118,10 @@ export default function DashboardClient({ userName, userEmail }: DashboardClient
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-24 pt-16 sm:px-10 lg:px-16">
         <HeaderSection userName={userName} userEmail={userEmail} />
+        <BillingSection
+          balance={creditBalance}
+          isLoading={isCreditBalanceLoading}
+        />
         <PhoneVerificationSection
           verifiedPhoneNumber={phoneVerification.phoneNumber}
           verifiedAt={phoneVerification.verifiedAt}

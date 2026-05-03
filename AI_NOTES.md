@@ -1,7 +1,7 @@
 # AI Notes (Codex-only mental model)
 
 ## One-paragraph mental model
-This is a Next.js App Router app that serves a marketing site, static MDX blog, and Clerk-protected dashboard. The dashboard uses server actions to read/write Supabase tables for per-group settings and user-level shared defaults. There is no WhatsApp bot or payment pipeline here; this repo only manages configuration.
+This is a Next.js App Router app that serves a marketing site, static MDX blog, and Clerk-protected dashboard. The dashboard uses server actions to read/write Supabase tables for per-group settings, user-level shared defaults, and prepaid WC credit billing. There is no full WhatsApp bot here; this repo manages configuration, credit purchases, and rule-based Whapi deletes.
 
 ## Critical invariants & rules
 - Auth is Clerk-only. `/dashboard` must stay protected by middleware + client redirect.
@@ -26,7 +26,7 @@ This is a Next.js App Router app that serves a marketing site, static MDX blog, 
 - Supabase RLS is not defined in migrations; the service role key bypasses RLS. This is powerful and dangerous.
 - Static marketing routes live under `app/(static)` and auth routes under `app/(auth)`.
 - Static blog routes/content live under `app/(blogs)`; keep blog code and MDX colocated there.
-- Subscription fields exist in the database but there is no payment flow.
+- WC credits are prepaid. New wallets receive 20 credits, and successful Whapi deletes reserve/deduct 1 credit.
 - Clerk env vars are required by the SDK but not referenced explicitly in code:
   - UNKNOWN / NEEDS CONFIRMATION: exact env variable names for this deployment.
 - Webhook moderation logic lives in `src/services/moderation/whapi-webhook.service.ts` and is the only place messages are evaluated/deleted.
