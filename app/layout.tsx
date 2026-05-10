@@ -8,9 +8,17 @@ const baseDescription =
   "Quiet and automated moderation for WhatsApp groups.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://whatsappwatch.com"),
+  metadataBase: new URL("https://www.whatsappwatch.com"),
   title: baseTitle,
   description: baseDescription,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
   openGraph: {
     title: baseTitle,
     description: baseDescription,

@@ -1,6 +1,9 @@
 import HowToRemoveSpamFromWhatsAppGroups, {
   post as howToRemoveSpamFromWhatsAppGroups,
 } from "../../content/blog/how-to-remove-spam-from-whatsapp-groups.mdx";
+import WhatsAppGroupAdminChecklist, {
+  post as whatsAppGroupAdminChecklist,
+} from "../../content/blog/whatsapp-group-admin-checklist.mdx";
 
 import type { ComponentType } from "react";
 
@@ -18,6 +21,10 @@ export type BlogPost = BlogPostMetadata & {
 };
 
 const posts: BlogPost[] = [
+  {
+    ...whatsAppGroupAdminChecklist,
+    Content: WhatsAppGroupAdminChecklist,
+  },
   {
     ...howToRemoveSpamFromWhatsAppGroups,
     Content: HowToRemoveSpamFromWhatsAppGroups,

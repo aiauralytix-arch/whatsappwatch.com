@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { getAllBlogPosts } from "./(blogs)/blog/_lib/blog";
 
-const siteUrl = "https://whatsappwatch.com";
+const siteUrl = "https://www.whatsappwatch.com";
 
 const staticRoutes = [
   {
