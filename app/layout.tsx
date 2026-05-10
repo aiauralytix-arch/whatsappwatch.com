@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import Providers from "./providers"
 import dynamic from "next/dynamic";
+import Script from "next/script";
 
 const baseTitle = "WhatsApp Watch";
 const baseDescription =
@@ -54,6 +55,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#f6f3ee] text-[#161616] antialiased">
+        <GoogleAdsTag />
         <CrispWithNoSSR />
         <Providers>
           {children}
@@ -61,4 +63,26 @@ export default function RootLayout({
       </body>
     </html>
   )
+}
+
+
+function GoogleAdsTag() {
+  const googleAdsId = "AW-18152793938";
+
+  return (
+    <>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-ads-tag" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${googleAdsId}');
+        `}
+      </Script>
+    </>
+  );
 }
