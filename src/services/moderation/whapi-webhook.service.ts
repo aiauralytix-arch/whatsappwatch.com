@@ -95,6 +95,8 @@ type RuleBasedFlags = {
 const PHONE_DIGIT_MIN = 8;
 const PHONE_DIGIT_MAX = 15;
 const PHONE_CANDIDATE_PATTERN = /(?:\+?\d[\d\s().-]{6,}\d)/g;
+const DEFAULT_WHAPI_DELETE_DELAY_WINDOW_MS = 20_000;
+const MAX_WHAPI_DELETE_DELAY_WINDOW_MS = 30_000;
 
 const isPhoneNumberLike = (value?: string | null) => {
   if (!value || typeof value !== "string") return false;
@@ -418,6 +420,35 @@ const evaluateModerationMessageForSpam = (
   );
 };
 
+const getWhapiDeleteDelayWindowMs = () => {
+  const parsed = Number(process.env.WHAPI_DELETE_DELAY_WINDOW_MS);
+  if (!Number.isFinite(parsed)) return DEFAULT_WHAPI_DELETE_DELAY_WINDOW_MS;
+  return Math.min(
+    Math.max(Math.trunc(parsed), 0),
+    MAX_WHAPI_DELETE_DELAY_WINDOW_MS,
+  );
+};
+
+const stableHash = (value: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
+
+const getWhapiDeleteDelayMs = (groupId: string, messageId: string) => {
+  const windowMs = getWhapiDeleteDelayWindowMs();
+  if (windowMs <= 0) return 0;
+  return stableHash(`${groupId}:${messageId}`) % windowMs;
+};
+
+const wait = (delayMs: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+
 const deleteWhatsappMessageById = async (messageId: string) => {
   if (!messageId) {
     throw new Error("Message ID is required.");
@@ -625,6 +656,18 @@ export const processWhatsappModerationWorkflow = async (
     let reservedCredit = false;
 
     if (isSpam && !isAllowlisted && isGroupMessage) {
+      if (message.groupId) {
+        const deleteDelayMs = getWhapiDeleteDelayMs(message.groupId, message.id);
+        if (deleteDelayMs > 0) {
+          console.info("Delaying Whapi message delete.", {
+            whapiGroupId: message.groupId,
+            whapiMessageId: message.id,
+            delayMs: deleteDelayMs,
+          });
+          await wait(deleteDelayMs);
+        }
+      }
+
       if (config) {
         try {
           const reservation = await reserveMessageDeleteCredit(
@@ -649,8 +692,17 @@ export const processWhatsappModerationWorkflow = async (
       if (reservedCredit) {
         try {
           wasDeleted = await deleteWhatsappMessageById(message.id);
+          console.info("Whapi message delete completed.", {
+            whapiGroupId: message.groupId,
+            whapiMessageId: message.id,
+            deleted: wasDeleted,
+          });
         } catch {
           wasDeleted = false;
+          console.error("Whapi message delete failed.", {
+            whapiGroupId: message.groupId,
+            whapiMessageId: message.id,
+          });
         }
 
         if (!wasDeleted && config) {
