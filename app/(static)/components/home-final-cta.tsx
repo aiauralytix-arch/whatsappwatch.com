@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function HomeFinalCta() {
   return (
     <section className="relative mx-auto w-full max-w-6xl px-6 pb-28 sm:px-10 lg:px-16">
@@ -18,18 +20,18 @@ export default function HomeFinalCta() {
             </p>
           </div>
           <div className="flex flex-col items-start justify-center gap-4">
-            <a
+            <Link
               href="/sign-up"
               className="inline-flex w-full items-center justify-center rounded-full bg-[#f7b787] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#161616] transition hover:translate-y-[-2px] hover:shadow-[var(--shadow-soft)]"
             >
               Start Free
-            </a>
-            <a
+            </Link>
+            <Link
               href="/dashboard"
               className="inline-flex w-full items-center justify-center rounded-full border border-[#f6f3ee] px-6 py-3 font-[var(--font-plex)] text-sm uppercase tracking-[0.25em] text-[#f6f3ee] transition hover:bg-[#f6f3ee] hover:text-[#161616]"
             >
               View Dashboard Demo
-            </a>
+            </Link>
           </div>
         </div>
       </div>

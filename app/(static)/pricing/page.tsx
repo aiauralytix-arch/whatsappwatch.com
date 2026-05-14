@@ -1,7 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 import { creditPacks } from "@/src/lib/billing/credit-packs";
+import SiteNav from "../components/site-nav";
 import PricingBuyButton from "./pricing-buy-button";
 
 export const metadata: Metadata = {
@@ -16,6 +16,12 @@ export const metadata: Metadata = {
 type PricingPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const pricingNavItems = [
+  { href: "/process", label: "Process" },
+  { href: "/system", label: "System" },
+  { href: "/pricing", label: "Pricing" },
+];
 
 export default async function PricingPage({ searchParams }: PricingPageProps) {
   const resolvedSearchParams = await searchParams;
@@ -37,39 +43,11 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
         </div>
 
         <section className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 pb-20 pt-12 sm:px-10 lg:px-16">
-          <nav className="flex items-center justify-between text-sm uppercase tracking-[0.2em] text-[#3a3a3a]">
-            <Link
-              href="/"
-              className="font-[var(--font-space)] text-base font-semibold tracking-[0.35em]"
-            >
-              WHATSAPP WATCH
-            </Link>
-            <div className="hidden items-center gap-8 font-[var(--font-plex)] text-xs sm:flex">
-              <Link className="transition hover:text-[#161616]" href="/process">
-                Process
-              </Link>
-              <Link className="transition hover:text-[#161616]" href="/system">
-                System
-              </Link>
-              <Link className="transition hover:text-[#161616]" href="/pricing">
-                Pricing
-              </Link>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/sign-in"
-                className="hidden rounded-full border border-transparent px-3 py-2 font-[var(--font-plex)] text-[10px] uppercase tracking-[0.2em] text-[#6b6b6b] transition hover:border-[#161616] hover:text-[#161616] sm:inline-flex"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/dashboard"
-                className="rounded-full border border-[#161616] px-4 py-2 font-[var(--font-plex)] text-xs tracking-[0.2em] transition hover:bg-[#161616] hover:text-[#f6f3ee]"
-              >
-                Dashboard
-              </Link>
-            </div>
-          </nav>
+          <SiteNav
+            items={pricingNavItems}
+            actions={[{ href: "/sign-in", label: "Sign in" }]}
+            primaryAction={{ href: "/dashboard", label: "Dashboard" }}
+          />
 
           <div className="mt-20 grid gap-12 lg:grid-cols-[0.95fr_1.05fr]">
             <div className="space-y-8">
