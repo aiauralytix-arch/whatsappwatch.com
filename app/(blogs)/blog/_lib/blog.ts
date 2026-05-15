@@ -4,6 +4,9 @@ import HowToRemoveSpamFromWhatsAppGroups, {
 import WhatsAppGroupAdminChecklist, {
   post as whatsAppGroupAdminChecklist,
 } from "../../content/blog/whatsapp-group-admin-checklist.mdx";
+import TypesOfScamMessagesOnWhatsApp, {
+  post as typesOfScamMessagesOnWhatsApp,
+} from "../../content/blog/types-of-scam-messages-on-whatsapp.mdx";
 
 import type { ComponentType } from "react";
 
@@ -21,6 +24,10 @@ export type BlogPost = BlogPostMetadata & {
 };
 
 const posts: BlogPost[] = [
+  {
+    ...typesOfScamMessagesOnWhatsApp,
+    Content: TypesOfScamMessagesOnWhatsApp,
+  },
   {
     ...whatsAppGroupAdminChecklist,
     Content: WhatsAppGroupAdminChecklist,

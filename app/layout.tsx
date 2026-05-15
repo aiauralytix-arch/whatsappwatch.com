@@ -67,7 +67,7 @@ export default function RootLayout({
 
 
 function GoogleAdsTag() {
-  const googleAdsId = "AW-18152793938";
+  const googleAdsId = "AW-16561207539";
 
   return (
     <>
